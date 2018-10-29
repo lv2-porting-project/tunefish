@@ -772,7 +772,7 @@ private:
             bool isRegistered() const noexcept              { return atom != 0; }
             LPCTSTR getWindowClassName() const noexcept     { return (LPCTSTR) (pointer_sized_uint) MAKELONG (atom, 0); }
 
-            JUCE_DECLARE_SINGLETON_SINGLETHREADED_MINIMAL (NativeWindowClass)
+            juce_DeclareSingleton_SingleThreaded_Minimal (NativeWindowClass)
 
         private:
             NativeWindowClass()
@@ -889,4 +889,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
 };
 
-JUCE_IMPLEMENT_SINGLETON (VideoComponent::Pimpl::DirectShowContext::NativeWindowClass)
+juce_ImplementSingleton_SingleThreaded (VideoComponent::Pimpl::DirectShowContext::NativeWindowClass)

@@ -33,8 +33,6 @@ namespace juce
     simple sounds.
 
     @see AudioProcessor, AudioProcessorGraph
-
-    @tags{Audio}
 */
 class JUCE_API  SoundPlayer             : public AudioIODeviceCallback
 {
@@ -98,7 +96,7 @@ public:
         multiple outputs so that something is sent to all output channels. If it
         is false, then the buffer will just be played on the first output channels.
      */
-    void play (AudioBuffer<float>* buffer,
+    void play (AudioSampleBuffer* buffer,
                bool deleteWhenFinished = false,
                bool playOnAllOutputChannels = false);
 

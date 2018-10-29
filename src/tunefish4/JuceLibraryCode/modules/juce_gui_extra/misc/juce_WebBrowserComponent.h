@@ -36,8 +36,6 @@ namespace juce
     The browser itself will be platform-dependent. On the Mac, probably Safari, on
     Windows, probably IE.
 
-
-    @tags{GUI}
 */
 class JUCE_API  WebBrowserComponent      : public Component
 {
@@ -138,18 +136,14 @@ public:
 private:
     //==============================================================================
     class Pimpl;
-    ScopedPointer<Pimpl> browser;
-    bool blankPageShown = false, unloadPageWhenBrowserIsHidden;
+    Pimpl* browser;
+    bool blankPageShown, unloadPageWhenBrowserIsHidden;
     String lastURL;
     StringArray lastHeaders;
     MemoryBlock lastPostData;
 
     void reloadLastURL();
     void checkWindowAssociation();
-
-  #if JUCE_ANDROID
-    friend bool juce_webViewPageLoadStarted (WebBrowserComponent*, const String&);
-  #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebBrowserComponent)
 };

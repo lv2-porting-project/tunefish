@@ -35,8 +35,6 @@ namespace juce
     the state of keys such as shift, control, alt, etc.
 
     @see KeyPress, MouseEvent::mods
-
-    @tags{GUI}
 */
 class JUCE_API  ModifierKeys
 {

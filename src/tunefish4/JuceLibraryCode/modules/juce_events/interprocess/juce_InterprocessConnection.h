@@ -44,8 +44,6 @@ class MemoryBlock;
     InterprocessConnectionServer class.
 
     @see InterprocessConnectionServer, Socket, NamedPipe
-
-    @tags{Events}
 */
 class JUCE_API  InterprocessConnection
 {
@@ -124,10 +122,10 @@ public:
     bool isConnected() const;
 
     /** Returns the socket that this connection is using (or nullptr if it uses a pipe). */
-    StreamingSocket* getSocket() const noexcept                 { return socket.get(); }
+    StreamingSocket* getSocket() const noexcept                 { return socket; }
 
     /** Returns the pipe that this connection is using (or nullptr if it uses a socket). */
-    NamedPipe* getPipe() const noexcept                         { return pipe.get(); }
+    NamedPipe* getPipe() const noexcept                         { return pipe; }
 
     /** Returns the name of the machine at the other end of this connection.
         This may return an empty string if the name is unknown.

@@ -31,8 +31,6 @@ namespace juce
 /**
     BlowFish encryption class.
 
-
-    @tags{Cryptography}
 */
 class JUCE_API  BlowFish
 {

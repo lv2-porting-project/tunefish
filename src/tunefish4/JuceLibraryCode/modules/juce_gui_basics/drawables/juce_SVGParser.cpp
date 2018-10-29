@@ -196,7 +196,10 @@ public:
 
         newState.parseSubElements (xml, *drawable);
 
-        drawable->setContentArea ({ viewboxXY.x, viewboxXY.y, newState.viewBoxW, newState.viewBoxH });
+        drawable->setContentArea (RelativeRectangle (RelativeCoordinate (viewboxXY.x),
+                                                     RelativeCoordinate (viewboxXY.x + newState.viewBoxW),
+                                                     RelativeCoordinate (viewboxXY.y),
+                                                     RelativeCoordinate (viewboxXY.y + newState.viewBoxH)));
         drawable->resetBoundingBoxToContentArea();
 
         return drawable;
@@ -240,7 +243,8 @@ public:
                     else
                         path.lineTo (p1);
 
-                    last2 = last = p1;
+                    last2 = last;
+                    last = p1;
                 }
                 break;
 
@@ -1170,7 +1174,8 @@ private:
         {
             const auto indexOfComma = link.indexOf (",");
             auto format = link.substring (5, indexOfComma).trim();
-            auto indexOfSemi = format.indexOf (";");
+
+            const auto indexOfSemi = format.indexOf (";");
 
             if (format.substring (indexOfSemi + 1).trim().equalsIgnoreCase ("base64"))
             {
@@ -1178,10 +1183,10 @@ private:
 
                 if (mime.equalsIgnoreCase ("image/png") || mime.equalsIgnoreCase ("image/jpeg"))
                 {
-                    auto base64text = link.substring (indexOfComma + 1).removeCharacters ("\t\n\r ");
+                    const String base64text = link.substring (indexOfComma + 1).removeCharacters ("\t\n\r ");
 
                     if (Base64::convertFromBase64 (imageStream, base64text))
-                        inputStream.reset (new MemoryInputStream (imageStream.getData(), imageStream.getDataSize(), false));
+                        inputStream = new MemoryInputStream (imageStream.getData(), imageStream.getDataSize(), false);
                 }
             }
         }
@@ -1190,7 +1195,7 @@ private:
             auto linkedFile = originalFile.getParentDirectory().getChildFile (link);
 
             if (linkedFile.existsAsFile())
-                inputStream.reset (linkedFile.createInputStream());
+                inputStream = linkedFile.createInputStream();
         }
 
         if (inputStream != nullptr)
@@ -1260,10 +1265,10 @@ private:
 
         if (len > 2)
         {
-            auto dpi = 96.0f;
+            const float dpi = 96.0f;
 
-            auto n1 = s[len - 2];
-            auto n2 = s[len - 1];
+            const juce_wchar n1 = s [len - 2];
+            const juce_wchar n2 = s [len - 1];
 
             if (n1 == 'i' && n2 == 'n')         n *= dpi;
             else if (n1 == 'm' && n2 == 'm')    n *= dpi / 25.4f;
@@ -1395,7 +1400,7 @@ private:
     }
 
     //==============================================================================
-    static bool isIdentifierChar (juce_wchar c)
+    static bool isIdentifierChar (const juce_wchar c)
     {
         return CharacterFunctions::isLetter (c) || c == '-';
     }
@@ -1441,7 +1446,7 @@ private:
 
     static bool parseNextNumber (String::CharPointerType& text, String& value, const bool allowUnits)
     {
-        auto s = text;
+        String::CharPointerType s (text);
 
         while (s.isWhitespace() || *s == ',')
             ++s;
@@ -1606,10 +1611,10 @@ private:
         return result;
     }
 
-    static void endpointToCentreParameters (double x1, double y1,
-                                            double x2, double y2,
-                                            double angle,
-                                            bool largeArc, bool sweep,
+    static void endpointToCentreParameters (const double x1, const double y1,
+                                            const double x2, const double y2,
+                                            const double angle,
+                                            const bool largeArc, const bool sweep,
                                             double& rx, double& ry,
                                             double& centreX, double& centreY,
                                             double& startAngle, double& deltaAngle) noexcept
@@ -1664,7 +1669,7 @@ private:
         if (uy < 0)
             startAngle = -startAngle;
 
-        startAngle += MathConstants<double>::halfPi;
+        startAngle += double_Pi * 0.5;
 
         deltaAngle = acos (jlimit (-1.0, 1.0, ((ux * vx) + (uy * vy))
                                                 / (length * juce_hypot (vx, vy))));
@@ -1675,18 +1680,18 @@ private:
         if (sweep)
         {
             if (deltaAngle < 0)
-                deltaAngle += MathConstants<double>::twoPi;
+                deltaAngle += double_Pi * 2.0;
         }
         else
         {
             if (deltaAngle > 0)
-                deltaAngle -= MathConstants<double>::twoPi;
+                deltaAngle -= double_Pi * 2.0;
         }
 
-        deltaAngle = fmod (deltaAngle, MathConstants<double>::twoPi);
+        deltaAngle = fmod (deltaAngle, double_Pi * 2.0);
     }
 
-    SVGState& operator= (const SVGState&) = delete;
+    SVGState& operator= (const SVGState&) JUCE_DELETED_FUNCTION;
 };
 
 
@@ -1711,8 +1716,8 @@ Drawable* Drawable::createFromSVGFile (const File& svgFile)
 
         if (svgDocument != nullptr)
         {
-            SVGState state (svgDocument.get(), svgFile);
-            return state.parseSVGElement (SVGState::XmlPath (svgDocument.get(), nullptr));
+            SVGState state (svgDocument, svgFile);
+            return state.parseSVGElement (SVGState::XmlPath (svgDocument, nullptr));
         }
     }
 

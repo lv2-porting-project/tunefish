@@ -89,8 +89,6 @@ namespace juce
 
     Disclaimer: neither of the code snippets above are tested! Please let me know if you have
     any corrections for them!
-
-    @tags{Cryptography}
 */
 class JUCE_API  RSAKey
 {

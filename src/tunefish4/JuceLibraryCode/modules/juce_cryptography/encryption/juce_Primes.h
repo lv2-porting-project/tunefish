@@ -34,8 +34,6 @@ namespace juce
     This class contains static methods for generating and testing prime numbers.
 
     @see BigInteger
-
-    @tags{Cryptography}
 */
 class JUCE_API  Primes
 {

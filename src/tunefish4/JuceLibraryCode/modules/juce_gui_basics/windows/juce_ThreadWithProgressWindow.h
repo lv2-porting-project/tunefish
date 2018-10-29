@@ -78,8 +78,6 @@ namespace juce
     @endcode
 
     @see Thread, AlertWindow
-
-    @tags{GUI}
 */
 class JUCE_API  ThreadWithProgressWindow  : public Thread,
                                             private Timer
@@ -151,7 +149,7 @@ public:
     void setStatusMessage (const String& newStatusMessage);
 
     /** Returns the AlertWindow that is being used. */
-    AlertWindow* getAlertWindow() const noexcept        { return alertWindow.get(); }
+    AlertWindow* getAlertWindow() const noexcept        { return alertWindow; }
 
     //==============================================================================
     /** This method is called (on the message thread) when the operation has finished.

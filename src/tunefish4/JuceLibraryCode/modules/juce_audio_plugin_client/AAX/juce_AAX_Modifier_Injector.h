@@ -27,8 +27,6 @@
 namespace juce
 {
 
-#ifndef DOXYGEN
-
 struct ModifierKeyProvider
 {
     virtual ~ModifierKeyProvider() {}
@@ -41,7 +39,5 @@ struct ModifierKeyReceiver
     virtual void setModifierKeyProvider (ModifierKeyProvider*) = 0;
     virtual void removeModifierKeyProvider() = 0;
 };
-
-#endif
 
 } // namespace juce

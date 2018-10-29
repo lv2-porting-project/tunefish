@@ -28,9 +28,6 @@ extern HWND juce_messageWindowHandle;
 typedef bool (*CheckEventBlockedByModalComps) (const MSG&);
 CheckEventBlockedByModalComps isEventBlockedByModalComps = nullptr;
 
-typedef void (*SettingChangeCallbackFunc) (void);
-SettingChangeCallbackFunc settingChangeCallback = nullptr;
-
 //==============================================================================
 namespace WindowsMessageHelpers
 {
@@ -104,18 +101,13 @@ namespace WindowsMessageHelpers
                 handleBroadcastMessage (reinterpret_cast<const COPYDATASTRUCT*> (lParam));
                 return 0;
             }
-            else if (message == WM_SETTINGCHANGE)
-            {
-                if (settingChangeCallback != nullptr)
-                    settingChangeCallback();
-            }
         }
 
         return DefWindowProc (h, message, wParam, lParam);
     }
 }
 
-#if JUCE_MODULE_AVAILABLE_juce_gui_extra
+#if JUCE_MODULE_AVAILABLE_juce_gui_extra && ! JUCE_MINGW
 LRESULT juce_offerEventToActiveXControl (::MSG&);
 #endif
 
@@ -130,7 +122,7 @@ bool MessageManager::dispatchNextMessageOnSystemQueue (const bool returnIfNoPend
 
     if (GetMessage (&m, (HWND) 0, 0, 0) >= 0)
     {
-      #if JUCE_MODULE_AVAILABLE_juce_gui_extra
+      #if JUCE_MODULE_AVAILABLE_juce_gui_extra && ! JUCE_MINGW
         if (juce_offerEventToActiveXControl (m) != S_FALSE)
             return true;
       #endif
@@ -141,7 +133,7 @@ bool MessageManager::dispatchNextMessageOnSystemQueue (const bool returnIfNoPend
         }
         else if (m.message == WM_QUIT)
         {
-            if (auto* app = JUCEApplicationBase::getInstance())
+            if (JUCEApplicationBase* const app = JUCEApplicationBase::getInstance())
                 app->systemRequestedQuit();
         }
         else if (isEventBlockedByModalComps == nullptr || ! isEventBlockedByModalComps (m))
@@ -234,7 +226,7 @@ struct MountedVolumeListChangeDetector::Pimpl   : private DeviceChangeDetector
     Array<File> lastVolumeList;
 };
 
-MountedVolumeListChangeDetector::MountedVolumeListChangeDetector()  { pimpl.reset (new Pimpl (*this)); }
+MountedVolumeListChangeDetector::MountedVolumeListChangeDetector()  { pimpl = new Pimpl (*this); }
 MountedVolumeListChangeDetector::~MountedVolumeListChangeDetector() {}
 
 } // namespace juce

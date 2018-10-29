@@ -737,8 +737,7 @@ struct Grid::AutoPlacement
         for (auto& item : grid.items)
             sortedItems.add (&item);
 
-        std::stable_sort (sortedItems.begin(), sortedItems.end(),
-                          [] (const GridItem* i1, const GridItem* i2)  { return i1->order < i2->order; });
+        sortedItems.sort (*this, true);
 
         // place fixed items first
         for (auto* item : sortedItems)
@@ -842,6 +841,12 @@ struct Grid::AutoPlacement
             implicitRowTracks.add (grid.autoRows);
 
         return { implicitColumnTracks, implicitRowTracks };
+    }
+
+    //==============================================================================
+    static int compareElements (const GridItem* i1, const GridItem* i2) noexcept
+    {
+        return i1->order < i2->order ? -1 : (i2->order < i1->order ? 1 : 0);
     }
 
     //==============================================================================

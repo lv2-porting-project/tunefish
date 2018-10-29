@@ -33,10 +33,8 @@ namespace juce
 
     @see MouseListener, Component::mouseMove, Component::mouseEnter, Component::mouseExit,
          Component::mouseDown, Component::mouseUp, Component::mouseDrag
-
-    @tags{GUI}
 */
-class JUCE_API  MouseEvent  final
+class JUCE_API  MouseEvent
 {
 public:
     //==============================================================================
@@ -379,10 +377,8 @@ private:
     Contains status information about a mouse wheel event.
 
     @see MouseListener, MouseEvent
-
-    @tags{GUI}
 */
-struct MouseWheelDetails  final
+struct MouseWheelDetails
 {
     //==============================================================================
     /** The amount that the wheel has been moved in the X axis.
@@ -421,10 +417,8 @@ struct MouseWheelDetails  final
     Contains status information about a pen event.
 
     @see MouseListener, MouseEvent
-
-    @tags{GUI}
 */
-struct PenDetails  final
+struct PenDetails
 {
     /**
         The rotation of the pen device in radians. Indicates the clockwise rotation, or twist,

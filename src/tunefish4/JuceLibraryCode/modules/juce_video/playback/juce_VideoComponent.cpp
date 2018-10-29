@@ -36,24 +36,24 @@ namespace juce
 //==============================================================================
 VideoComponent::VideoComponent()  : pimpl (new Pimpl())
 {
-    addAndMakeVisible (pimpl.get());
+    addAndMakeVisible (pimpl);
 }
 
 VideoComponent::~VideoComponent()
 {
-    pimpl.reset();
+    pimpl = nullptr;
 }
 
 Result VideoComponent::load (const File& file)
 {
-    auto r = pimpl->load (file);
+    Result r = pimpl->load (file);
     resized();
     return r;
 }
 
 Result VideoComponent::load (const URL& url)
 {
-    auto r = pimpl->load (url);
+    Result r = pimpl->load (url);
     resized();
     return r;
 }
@@ -86,11 +86,11 @@ float VideoComponent::getAudioVolume() const                { return pimpl->getV
 
 void VideoComponent::resized()
 {
-    auto r = getLocalBounds();
+    Rectangle<int> r = getLocalBounds();
 
     if (isVideoOpen() && ! r.isEmpty())
     {
-        auto nativeSize = getVideoNativeSize();
+        Rectangle<int> nativeSize = getVideoNativeSize();
 
         if (nativeSize.isEmpty())
         {

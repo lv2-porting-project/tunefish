@@ -42,9 +42,8 @@ namespace juce
     app (located in /Applications/Utilities). On Windows, you should use
     the system settings. On Linux, Bluetooth MIDI devices are currently not
     supported.
-
-    @tags{Audio}
 */
+
 class JUCE_API BluetoothMidiDevicePairingDialogue
 {
 public:

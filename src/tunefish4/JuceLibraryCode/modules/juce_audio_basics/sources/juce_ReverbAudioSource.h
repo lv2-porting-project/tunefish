@@ -28,8 +28,6 @@ namespace juce
     An AudioSource that uses the Reverb class to apply a reverb to another AudioSource.
 
     @see Reverb
-
-    @tags{Audio}
 */
 class JUCE_API  ReverbAudioSource   : public AudioSource
 {

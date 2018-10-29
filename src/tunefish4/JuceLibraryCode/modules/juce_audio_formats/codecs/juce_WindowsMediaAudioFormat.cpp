@@ -48,7 +48,7 @@ public:
 
     JUCE_COMRESULT Read (void* dest, ULONG numBytes, ULONG* bytesRead)
     {
-        auto numRead = source.read (dest, numBytes);
+        const int numRead = source.read (dest, numBytes);
 
         if (bytesRead != nullptr)
             *bytesRead = numRead;
@@ -58,7 +58,7 @@ public:
 
     JUCE_COMRESULT Seek (LARGE_INTEGER position, DWORD origin, ULARGE_INTEGER* resultPosition)
     {
-        auto newPos = (int64) position.QuadPart;
+        int64 newPos = (int64) position.QuadPart;
 
         if (origin == STREAM_SEEK_CUR)
         {
@@ -66,8 +66,7 @@ public:
         }
         else if (origin == STREAM_SEEK_END)
         {
-            auto len = source.getTotalLength();
-
+            const int64 len = source.getTotalLength();
             if (len < 0)
                 return E_NOTIMPL;
 
@@ -90,8 +89,8 @@ public:
         {
             char buffer [1024];
 
-            auto numToCopy = (int) jmin ((int64) sizeof (buffer), (int64) numBytes);
-            auto numRead = source.read (buffer, numToCopy);
+            const int numToCopy = (int) jmin ((int64) sizeof (buffer), (int64) numBytes);
+            const int numRead = source.read (buffer, numToCopy);
 
             if (numRead <= 0)
                 break;
@@ -226,15 +225,15 @@ public:
                 }
             }
 
-            auto offsetInBuffer = (int) (startSampleInFile - bufferedRange.getStart());
-            auto* rawData = static_cast<const int16*> (addBytesToPointer (buffer.getData(), offsetInBuffer * stride));
-            auto numToDo = jmin (numSamples, (int) (bufferedRange.getLength() - offsetInBuffer));
+            const int offsetInBuffer = (int) (startSampleInFile - bufferedRange.getStart());
+            const int16* const rawData = static_cast<const int16*> (addBytesToPointer (buffer.getData(), offsetInBuffer * stride));
+            const int numToDo = jmin (numSamples, (int) (bufferedRange.getLength() - offsetInBuffer));
 
             for (int i = 0; i < numDestChannels; ++i)
             {
                 jassert (destSamples[i] != nullptr);
 
-                auto srcChan = jmin (i, (int) numChannels - 1);
+                const int srcChan = jmin (i, (int) numChannels - 1);
                 const int16* src = rawData + srcChan;
                 int* const dst = destSamples[i] + startOffsetInDestBuffer;
 
@@ -302,7 +301,7 @@ private:
 
                         if (mediaType->majortype == WMMEDIATYPE_Audio)
                         {
-                            auto* inputFormat = reinterpret_cast<WAVEFORMATEX*> (mediaType->pbFormat);
+                            const WAVEFORMATEX* const inputFormat = reinterpret_cast<WAVEFORMATEX*> (mediaType->pbFormat);
 
                             sampleRate = inputFormat->nSamplesPerSec;
                             numChannels = inputFormat->nChannels;
@@ -329,8 +328,8 @@ WindowsMediaAudioFormat::WindowsMediaAudioFormat()
 
 WindowsMediaAudioFormat::~WindowsMediaAudioFormat() {}
 
-Array<int> WindowsMediaAudioFormat::getPossibleSampleRates()    { return {}; }
-Array<int> WindowsMediaAudioFormat::getPossibleBitDepths()      { return {}; }
+Array<int> WindowsMediaAudioFormat::getPossibleSampleRates()    { return Array<int>(); }
+Array<int> WindowsMediaAudioFormat::getPossibleBitDepths()      { return Array<int>(); }
 
 bool WindowsMediaAudioFormat::canDoStereo()     { return true; }
 bool WindowsMediaAudioFormat::canDoMono()       { return true; }

@@ -203,13 +203,13 @@ void SystemTrayIconComponent::setIconImage (const Image& newImage)
         HICON hicon = IconConverters::createHICONFromImage (newImage, TRUE, 0, 0);
 
         if (pimpl == nullptr)
-            pimpl.reset (new Pimpl (*this, hicon, (HWND) getWindowHandle()));
+            pimpl = new Pimpl (*this, hicon, (HWND) getWindowHandle());
         else
             pimpl->updateIcon (hicon);
     }
     else
     {
-        pimpl.reset();
+        pimpl = nullptr;
     }
 }
 

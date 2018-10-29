@@ -53,12 +53,12 @@ void PreferencesPanel::addSettingsPage (const String& title,
                                         const Drawable* overIcon,
                                         const Drawable* downIcon)
 {
-    auto* button = new DrawableButton (title, DrawableButton::ImageAboveTextLabel);
+    DrawableButton* const button = new DrawableButton (title, DrawableButton::ImageAboveTextLabel);
     buttons.add (button);
 
     button->setImages (icon, overIcon, downIcon);
     button->setRadioGroupId (1);
-    button->onClick = [this] { clickedPage(); };
+    button->addListener (this);
     button->setClickingTogglesState (true);
     button->setWantsKeyboardFocus (false);
     addAndMakeVisible (button);
@@ -69,7 +69,7 @@ void PreferencesPanel::addSettingsPage (const String& title,
         setCurrentPage (title);
 }
 
-void PreferencesPanel::addSettingsPage (const String& title, const void* imageData, int imageDataSize)
+void PreferencesPanel::addSettingsPage (const String& title, const void* imageData, const int imageDataSize)
 {
     DrawableImage icon, iconOver, iconDown;
     icon.setImage (ImageCache::getFromMemory (imageData, imageDataSize));
@@ -121,34 +121,34 @@ void PreferencesPanel::setCurrentPage (const String& pageName)
     {
         currentPageName = pageName;
 
-        currentPage.reset();
-        currentPage.reset (createComponentForPage (pageName));
+        currentPage = nullptr;
+        currentPage = createComponentForPage (pageName);
 
         if (currentPage != nullptr)
         {
-            addAndMakeVisible (currentPage.get());
+            addAndMakeVisible (currentPage);
             currentPage->toBack();
             resized();
         }
 
-        for (auto* b : buttons)
+        for (int i = 0; i < buttons.size(); ++i)
         {
-            if (b->getName() == pageName)
+            if (buttons.getUnchecked(i)->getName() == pageName)
             {
-                b->setToggleState (true, dontSendNotification);
+                buttons.getUnchecked(i)->setToggleState (true, dontSendNotification);
                 break;
             }
         }
     }
 }
 
-void PreferencesPanel::clickedPage()
+void PreferencesPanel::buttonClicked (Button*)
 {
-    for (auto* b : buttons)
+    for (int i = 0; i < buttons.size(); ++i)
     {
-        if (b->getToggleState())
+        if (buttons.getUnchecked(i)->getToggleState())
         {
-            setCurrentPage (b->getName());
+            setCurrentPage (buttons.getUnchecked(i)->getName());
             break;
         }
     }

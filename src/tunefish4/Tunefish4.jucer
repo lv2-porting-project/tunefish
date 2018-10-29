@@ -2,13 +2,13 @@
 
 <JUCERPROJECT id="hMeUe0" name="Tunefish4" projectType="audioplug" version="4.2.0"
               bundleIdentifier="org.braincontrol.Tunefish4" includeBinaryInAppConfig="1"
-              buildVST="1" buildVST3="1" buildAU="1" buildRTAS="0" buildAAX="0"
+              buildVST="1" buildVST3="0" buildAU="0" buildRTAS="0" buildAAX="0"
               pluginName="Tunefish4" pluginDesc="Tunefish4" pluginManufacturer="Brain Control"
               pluginManufacturerCode="Bctr" pluginCode="Tfs4" pluginChannelConfigs="{2, 2}"
               pluginIsSynth="1" pluginWantsMidiIn="1" pluginProducesMidiOut="0"
               pluginSilenceInIsSilenceOut="0" pluginEditorRequiresKeys="0"
               pluginAUExportPrefix="Tunefish4AU" pluginRTASCategory="" aaxIdentifier="org.braincontrol.Tunefish4"
-              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="5.3.0"
+              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="5.1.2"
               companyName="Brain Control" companyWebsite="http://www.tunefish-synth.com"
               companyEmail="payne@braincontrol.org" pluginIsMidiEffectPlugin="0"
               displaySplashScreen="0" reportAppUsage="0" splashScreenColour="Dark"
@@ -64,21 +64,21 @@
                        isDebug="0" optimisation="3" targetName="Tunefish4" enablePluginBinaryCopyStep="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_events" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_graphics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_data_structures" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_extra" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_cryptography" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_video" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_devices" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_formats" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_processors" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_plugin_client" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../../../3rdparty/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../DISTRHO-JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
     <VS2015 targetFolder="Builds/VisualStudio2015" vstFolder="c:/dev/3rdparty/vst"
@@ -102,21 +102,21 @@
                        enablePluginBinaryCopyStep="0" linkTimeOptimisation="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_events" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_graphics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_data_structures" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_extra" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_cryptography" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_video" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_devices" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_formats" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_processors" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_plugin_client" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../../../3rdparty/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../DISTRHO-JUCE/modules"/>
       </MODULEPATHS>
     </VS2015>
     <VS2017 targetFolder="Builds/VisualStudio2017" vst3Folder="C:\SDKs\VST_SDK\VST3_SDK">
@@ -139,21 +139,21 @@
                        enablePluginBinaryCopyStep="0" linkTimeOptimisation="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_video" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_extra" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_graphics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_events" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_data_structures" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_cryptography" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_core" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../../../3rdparty/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_plugin_client" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_formats" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_devices" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
+        <MODULEPATH id="juce_video" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../DISTRHO-JUCE/modules"/>
       </MODULEPATHS>
     </VS2017>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile" vstFolder="~/src/3rdparty/vst"
@@ -165,21 +165,21 @@
                        targetName="Tunefish4"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_events" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_graphics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_data_structures" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_extra" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_cryptography" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_video" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_basics" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_devices" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_formats" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_processors" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_plugin_client" path="..\..\..\..\3rdparty\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../../../3rdparty/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../DISTRHO-JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../DISTRHO-JUCE/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
   </EXPORTFORMATS>

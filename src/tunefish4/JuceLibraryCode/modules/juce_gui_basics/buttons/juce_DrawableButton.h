@@ -35,8 +35,6 @@ namespace juce
     'normal', 'over' and 'down' states.
 
     @see Button
-
-    @tags{GUI}
 */
 class JUCE_API  DrawableButton  : public Button
 {

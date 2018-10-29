@@ -38,8 +38,6 @@ namespace juce
     give it some SampledSound objects to play.
 
     @see SamplerVoice, Synthesiser, SynthesiserSound
-
-    @tags{Audio}
 */
 class JUCE_API  SamplerSound    : public SynthesiserSound
 {
@@ -81,7 +79,7 @@ public:
     /** Returns the audio sample data.
         This could return nullptr if there was a problem loading the data.
     */
-    AudioBuffer<float>* getAudioData() const noexcept       { return data.get(); }
+    AudioSampleBuffer* getAudioData() const noexcept        { return data; }
 
 
     //==============================================================================
@@ -94,11 +92,11 @@ private:
     friend class SamplerVoice;
 
     String name;
-    ScopedPointer<AudioBuffer<float>> data;
+    ScopedPointer<AudioSampleBuffer> data;
     double sourceSampleRate;
     BigInteger midiNotes;
-    int length = 0, attackSamples = 0, releaseSamples = 0;
-    int midiRootNote = 0;
+    int length, attackSamples, releaseSamples;
+    int midiRootNote;
 
     JUCE_LEAK_DETECTOR (SamplerSound)
 };
@@ -112,8 +110,6 @@ private:
     give it some SampledSound objects to play.
 
     @see SamplerSound, Synthesiser, SynthesiserVoice
-
-    @tags{Audio}
 */
 class JUCE_API  SamplerVoice    : public SynthesiserVoice
 {
@@ -134,15 +130,15 @@ public:
     void pitchWheelMoved (int newValue) override;
     void controllerMoved (int controllerNumber, int newValue) override;
 
-    void renderNextBlock (AudioBuffer<float>&, int startSample, int numSamples) override;
+    void renderNextBlock (AudioSampleBuffer&, int startSample, int numSamples) override;
 
 
 private:
     //==============================================================================
-    double pitchRatio = 0;
-    double sourceSamplePosition = 0;
-    float lgain = 0, rgain = 0, attackReleaseLevel = 0, attackDelta = 0, releaseDelta = 0;
-    bool isInAttack = false, isInRelease = false;
+    double pitchRatio;
+    double sourceSamplePosition;
+    float lgain, rgain, attackReleaseLevel, attackDelta, releaseDelta;
+    bool isInAttack, isInRelease;
 
     JUCE_LEAK_DETECTOR (SamplerVoice)
 };

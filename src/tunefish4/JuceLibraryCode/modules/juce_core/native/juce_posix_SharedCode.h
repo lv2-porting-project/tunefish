@@ -187,14 +187,8 @@ static MaxNumFileHandlesInitialiser maxNumFileHandlesInitialiser;
 #endif
 
 //==============================================================================
-#ifndef JUCE_GCC
- const juce_wchar File::separator = '/';
- const StringRef File::separatorString ("/");
-#endif
-
-juce_wchar File::getSeparatorChar()    { return '/'; }
-StringRef File::getSeparatorString()   { return "/"; }
-
+const juce_wchar File::separator = '/';
+const String File::separatorString ("/");
 
 //==============================================================================
 File File::getCurrentWorkingDirectory()
@@ -357,7 +351,7 @@ bool File::hasWriteAccess() const
         return (hasEffectiveRootFilePermissions()
              || access (fullPath.toUTF8(), W_OK) == 0);
 
-    if ((! isDirectory()) && fullPath.containsChar (getSeparatorChar()))
+    if ((! isDirectory()) && fullPath.containsChar (separator))
         return getParentDirectory().hasWriteAccess();
 
     return false;
@@ -366,7 +360,6 @@ bool File::hasWriteAccess() const
 static bool setFileModeFlags (const String& fullPath, mode_t flags, bool shouldSet) noexcept
 {
     juce_statStruct info;
-
     if (! juce_stat (fullPath, info))
         return false;
 
@@ -651,12 +644,39 @@ File juce_getExecutableFile()
 
             void* localSymbol = (void*) juce_getExecutableFile;
             dladdr (localSymbol, &exeInfo);
-            return CharPointer_UTF8 (exeInfo.dli_fname);
+
+            const CharPointer_UTF8 filename (exeInfo.dli_fname);
+
+            // if the filename is absolute simply return it
+            if (File::isAbsolutePath (filename))
+                return filename;
+
+            // if the filename is relative construct from CWD
+            if (filename[0] == '.')
+                return File::getCurrentWorkingDirectory().getChildFile (filename).getFullPathName();
+
+            // filename is abstract, look up in PATH
+            if (const char* const envpath = ::getenv ("PATH"))
+            {
+                StringArray paths (StringArray::fromTokens (envpath, ":", ""));
+
+                for (int i=paths.size(); --i>=0;)
+                {
+                    const File filepath (File (paths[i]).getChildFile (filename));
+
+                    if (filepath.existsAsFile())
+                        return filepath.getFullPathName();
+                }
+            }
+
+            // if we reach this, we failed to find ourselves...
+            jassertfalse;
+            return filename;
         }
     };
 
     static String filename = DLAddrReader::getFilename();
-    return File::getCurrentWorkingDirectory().getChildFile (filename);
+    return filename;
    #endif
 }
 
@@ -877,10 +897,10 @@ bool InterProcessLock::enter (const int timeOutMillisecs)
 
     if (pimpl == nullptr)
     {
-        pimpl.reset (new Pimpl (name, timeOutMillisecs));
+        pimpl = new Pimpl (name, timeOutMillisecs);
 
         if (pimpl->handle == 0)
-            pimpl.reset();
+            pimpl = nullptr;
     }
     else
     {
@@ -898,7 +918,7 @@ void InterProcessLock::exit()
     jassert (pimpl != nullptr);
 
     if (pimpl != nullptr && --(pimpl->refCount) == 0)
-        pimpl.reset();
+        pimpl = nullptr;
 }
 
 //==============================================================================
@@ -929,11 +949,8 @@ extern "C" void* threadEntryProc (void* userData)
     return nullptr;
 }
 
-#if JUCE_ANDROID && JUCE_MODULE_AVAILABLE_juce_audio_devices && \
-   ((JUCE_USE_ANDROID_OPENSLES || (! defined(JUCE_USE_ANDROID_OPENSLES) && JUCE_ANDROID_API_VERSION > 8)) \
- || (JUCE_USE_ANDROID_OBOE || (! defined(JUCE_USE_ANDROID_OBOE) && JUCE_ANDROID_API_VERSION > 15)))
-
-  #define JUCE_ANDROID_REALTIME_THREAD_AVAILABLE 1
+#if JUCE_ANDROID && JUCE_MODULE_AVAILABLE_juce_audio_devices && (JUCE_USE_ANDROID_OPENSLES || (! defined(JUCE_USE_ANDROID_OPENSLES) && JUCE_ANDROID_API_VERSION > 8))
+#define JUCE_ANDROID_REALTIME_THREAD_AVAILABLE 1
 #endif
 
 #if JUCE_ANDROID_REALTIME_THREAD_AVAILABLE
@@ -947,7 +964,7 @@ void Thread::launchThread()
     {
        #if JUCE_ANDROID_REALTIME_THREAD_AVAILABLE
         threadHandle = (void*) juce_createRealtimeAudioThread (threadEntryProc, this);
-        threadId = (ThreadID) threadHandle.get();
+        threadId = (ThreadID) threadHandle;
 
         return;
        #else
@@ -972,7 +989,7 @@ void Thread::launchThread()
     {
         pthread_detach (handle);
         threadHandle = (void*) handle;
-        threadId = (ThreadID) threadHandle.get();
+        threadId = (ThreadID) threadHandle;
     }
 
     if (attrPtr != nullptr)
@@ -987,12 +1004,12 @@ void Thread::closeThreadHandle()
 
 void Thread::killThread()
 {
-    if (threadHandle.get() != 0)
+    if (threadHandle != 0)
     {
        #if JUCE_ANDROID
         jassertfalse; // pthread_cancel not available!
        #else
-        pthread_cancel ((pthread_t) threadHandle.get());
+        pthread_cancel ((pthread_t) threadHandle);
        #endif
     }
 }
@@ -1134,13 +1151,24 @@ public:
         // Looks like you're trying to launch a non-existent exe or a folder (perhaps on OSX
         // you're trying to launch the .app folder rather than the actual binary inside it?)
         jassert (File::getCurrentWorkingDirectory().getChildFile (exe).existsAsFile()
-                  || ! exe.containsChar (File::getSeparatorChar()));
+                  || ! exe.containsChar (File::separator));
 
         int pipeHandles[2] = { 0 };
 
         if (pipe (pipeHandles) == 0)
         {
+              Array<char*> argv;
+              for (int i = 0; i < arguments.size(); ++i)
+                  if (arguments[i].isNotEmpty())
+                      argv.add (const_cast<char*> (arguments[i].toRawUTF8()));
+
+              argv.add (nullptr);
+
+#if JUCE_USE_VFORK
+            const pid_t result = vfork();
+#else
             const pid_t result = fork();
+#endif
 
             if (result < 0)
             {
@@ -1149,6 +1177,7 @@ public:
             }
             else if (result == 0)
             {
+#if ! JUCE_USE_VFORK
                 // we're the child process..
                 close (pipeHandles[0]);   // close the read handle
 
@@ -1163,16 +1192,10 @@ public:
                     dup2 (open ("/dev/null", O_WRONLY), STDERR_FILENO);
 
                 close (pipeHandles[1]);
+#endif
 
-                Array<char*> argv;
-                for (int i = 0; i < arguments.size(); ++i)
-                    if (arguments[i].isNotEmpty())
-                        argv.add (const_cast<char*> (arguments[i].toRawUTF8()));
-
-                argv.add (nullptr);
-
-                execvp (exe.toRawUTF8(), argv.getRawDataPointer());
-                exit (-1);
+                if (execvp (argv[0], argv.getRawDataPointer()) < 0)
+                    _exit (-1);
             }
             else
             {
@@ -1182,6 +1205,8 @@ public:
                 close (pipeHandles[1]); // close the write handle
             }
         }
+
+        ignoreUnused (streamFlags);
     }
 
     ~ActiveProcess()
@@ -1241,6 +1266,11 @@ public:
         return 0;
     }
 
+    int getPID() const noexcept
+    {
+        return childPID;
+    }
+
     int childPID;
 
 private:
@@ -1260,10 +1290,10 @@ bool ChildProcess::start (const StringArray& args, int streamFlags)
     if (args.size() == 0)
         return false;
 
-    activeProcess.reset (new ActiveProcess (args, streamFlags));
+    activeProcess = new ActiveProcess (args, streamFlags);
 
     if (activeProcess->childPID == 0)
-        activeProcess.reset();
+        activeProcess = nullptr;
 
     return activeProcess != nullptr;
 }

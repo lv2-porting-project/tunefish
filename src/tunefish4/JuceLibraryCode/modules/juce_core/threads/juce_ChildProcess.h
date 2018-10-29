@@ -29,8 +29,6 @@ namespace juce
 
     This class lets you launch an executable, and read its output. You can also
     use it to check whether the child process has finished.
-
-    @tags{Core}
 */
 class JUCE_API  ChildProcess
 {
@@ -100,6 +98,8 @@ public:
         result in undefined behaviour.
     */
     bool kill();
+
+    uint32 getPID() const noexcept;
 
 private:
     //==============================================================================

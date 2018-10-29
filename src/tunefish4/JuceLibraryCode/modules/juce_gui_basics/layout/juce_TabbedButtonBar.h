@@ -38,8 +38,6 @@ class TabbedButtonBar;
     method to create it instead of the default one.
 
     @see TabbedButtonBar
-
-    @tags{GUI}
 */
 class JUCE_API  TabBarButton  : public Button
 {
@@ -74,7 +72,7 @@ public:
                             ExtraComponentPlacement extraComponentPlacement);
 
     /** Returns the custom component, if there is one. */
-    Component* getExtraComponent() const noexcept                           { return extraComponent.get(); }
+    Component* getExtraComponent() const noexcept                           { return extraComponent; }
 
     /** Returns the placement of the custom component, if there is one. */
     ExtraComponentPlacement getExtraComponentPlacement() const noexcept     { return extraCompPlacement; }
@@ -122,10 +120,10 @@ public:
 protected:
     friend class TabbedButtonBar;
     TabbedButtonBar& owner;
-    int overlapPixels = 0;
+    int overlapPixels;
 
     ScopedPointer<Component> extraComponent;
-    ExtraComponentPlacement extraCompPlacement = afterText;
+    ExtraComponentPlacement extraCompPlacement;
 
 private:
     void calcAreas (Rectangle<int>&, Rectangle<int>&) const;
@@ -147,8 +145,6 @@ private:
     and other housekeeping.
 
     @see TabbedComponent
-
-    @tags{GUI}
 */
 class JUCE_API  TabbedButtonBar  : public Component,
                                    public ChangeBroadcaster
@@ -345,6 +341,8 @@ protected:
     virtual TabBarButton* createTabButton (const String& tabName, int tabIndex);
 
 private:
+    Orientation orientation;
+
     struct TabInfo
     {
         ScopedPointer<TabBarButton> button;
@@ -352,11 +350,10 @@ private:
         Colour colour;
     };
 
-    OwnedArray<TabInfo> tabs;
+    OwnedArray <TabInfo> tabs;
 
-    Orientation orientation;
-    double minimumScale = 0.7;
-    int currentTabIndex = -1;
+    double minimumScale;
+    int currentTabIndex;
 
     class BehindFrontTabComp;
     friend class BehindFrontTabComp;

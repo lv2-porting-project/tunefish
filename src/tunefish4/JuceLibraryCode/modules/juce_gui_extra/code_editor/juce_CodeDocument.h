@@ -40,8 +40,6 @@ class CodeDocumentLine;
     quick to insert and delete.
 
     @see CodeEditorComponent
-
-    @tags{GUI}
 */
 class JUCE_API  CodeDocument
 {
@@ -181,9 +179,9 @@ public:
         String getLineText() const;
 
     private:
-        CodeDocument* owner = nullptr;
-        int characterPos = 0, line = 0, indexInLine = 0;
-        bool positionMaintained = false;
+        CodeDocument* owner;
+        int characterPos, line, indexInLine;
+        bool positionMaintained;
     };
 
     //==============================================================================
@@ -252,13 +250,13 @@ public:
 
     //==============================================================================
     /** Returns the preferred new-line characters for the document.
-        This will be either "\\n", "\\r\\n", or (rarely) "\\r".
+        This will be either "\n", "\r\n", or (rarely) "\r".
         @see setNewLineCharacters
     */
     String getNewLineCharacters() const noexcept          { return newLineChars; }
 
     /** Sets the new-line characters that the document should use.
-        The string must be either "\\n", "\\r\\n", or (rarely) "\\r".
+        The string must be either "\n", "\r\n", or (rarely) "\r".
         @see getNewLineCharacters
     */
     void setNewLineCharacters (const String& newLineCharacters) noexcept;
@@ -359,8 +357,8 @@ public:
     {
     public:
         Iterator (const CodeDocument& document) noexcept;
-        Iterator (const Iterator&) = default;
-        Iterator& operator= (const Iterator&) = default;
+        Iterator (const Iterator&) noexcept;
+        Iterator& operator= (const Iterator&) noexcept;
         ~Iterator() noexcept;
 
         /** Reads the next character and returns it.
@@ -391,24 +389,24 @@ public:
 
     private:
         const CodeDocument* document;
-        mutable String::CharPointerType charPointer { nullptr };
-        int line = 0, position = 0;
+        mutable String::CharPointerType charPointer;
+        int line, position;
     };
 
 private:
     //==============================================================================
-    struct InsertAction;
-    struct DeleteAction;
+    friend class CodeDocumentInsertAction;
+    friend class CodeDocumentDeleteAction;
     friend class Iterator;
     friend class Position;
 
-    OwnedArray<CodeDocumentLine> lines;
-    Array<Position*> positionsToMaintain;
+    OwnedArray <CodeDocumentLine> lines;
+    Array <Position*> positionsToMaintain;
     UndoManager undoManager;
-    int currentActionIndex = 0, indexOfSavedState = -1;
-    int maximumLineLength = -1;
-    ListenerList<Listener> listeners;
-    String newLineChars { "\r\n" };
+    int currentActionIndex, indexOfSavedState;
+    int maximumLineLength;
+    ListenerList <Listener> listeners;
+    String newLineChars;
 
     void insert (const String& text, int insertPos, bool undoable);
     void remove (int startPos, int endPos, bool undoable);

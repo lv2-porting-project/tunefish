@@ -89,12 +89,7 @@ public:
         releaseDC();
     }
 
-    bool initialiseOnRenderThread (OpenGLContext& c)
-    {
-        context = &c;
-        return true;
-    }
-
+    void initialiseOnRenderThread (OpenGLContext& c) { context = &c; }
     void shutdownOnRenderThread()           { deactivateCurrentContext(); context = nullptr; }
 
     static void deactivateCurrentContext()  { wglMakeCurrent (0, 0); }

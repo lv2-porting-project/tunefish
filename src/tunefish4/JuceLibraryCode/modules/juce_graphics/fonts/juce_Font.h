@@ -36,10 +36,8 @@ namespace juce
     horizontal scale factor.
 
     @see Typeface
-
-    @tags{Graphics}
 */
-class JUCE_API  Font  final
+class JUCE_API  Font
 {
 public:
     //==============================================================================
@@ -394,7 +392,7 @@ public:
         An extra x offset is added at the end of the run, to indicate where the right hand
         edge of the last character is.
     */
-    void getGlyphPositions (const String& text, Array<int>& glyphs, Array<float>& xOffsets) const;
+    void getGlyphPositions (const String& text, Array <int>& glyphs, Array <float>& xOffsets) const;
 
     //==============================================================================
     /** Returns the typeface used by this font.

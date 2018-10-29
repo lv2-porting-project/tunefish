@@ -1107,7 +1107,7 @@ public:
 
     MidiServiceType* getService();
 
-    JUCE_DECLARE_SINGLETON (MidiService, false)
+    juce_DeclareSingleton (MidiService, false)
 
 private:
     MidiService();
@@ -1115,7 +1115,7 @@ private:
     ScopedPointer<MidiServiceType> internal;
 };
 
-JUCE_IMPLEMENT_SINGLETON (MidiService)
+juce_ImplementSingleton (MidiService)
 
 MidiService::~MidiService()
 {
@@ -1164,7 +1164,7 @@ MidiInput* MidiInput::openDevice (const int index, MidiInputCallback* const call
     if (callback == nullptr)
         return nullptr;
 
-    ScopedPointer<MidiInput> in (new MidiInput (String()));
+    ScopedPointer<MidiInput> in (new MidiInput ({}));
     ScopedPointer<MidiServiceType::InputWrapper> wrapper;
 
     try

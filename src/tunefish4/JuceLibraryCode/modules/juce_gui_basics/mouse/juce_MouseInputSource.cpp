@@ -106,8 +106,8 @@ public:
     }
 
     bool isPressureValid()    const noexcept     { return pressure >= 0.0f && pressure <= 1.0f; }
-    bool isOrientationValid() const noexcept     { return orientation >= 0.0f && orientation <= MathConstants<float>::twoPi; }
-    bool isRotationValid() const noexcept        { return rotation >= 0.0f && rotation <= MathConstants<float>::twoPi; }
+    bool isOrientationValid() const noexcept     { return orientation >= 0.0f && orientation <= 2.0f * float_Pi; }
+    bool isRotationValid() const noexcept        { return rotation >= 0.0f && rotation <= 2.0f * float_Pi; }
     bool isTiltValid (bool isX) const noexcept   { return isX ? (tiltX >= -1.0f && tiltX <= 1.0f) : (tiltY >= -1.0f && tiltY <= 1.0f); }
 
     //==============================================================================
@@ -211,8 +211,7 @@ public:
 
             if (auto* current = getComponentUnderMouse())
             {
-                registerMouseDown (screenPos, time, *current, buttonState,
-                                   inputType == MouseInputSource::InputSourceType::touch);
+                registerMouseDown (screenPos, time, *current, buttonState);
                 sendMouseDown (*current, screenPos, time);
             }
         }
@@ -523,26 +522,23 @@ private:
         Time time;
         ModifierKeys buttons;
         uint32 peerID = 0;
-        bool isTouch = false;
 
         bool canBePartOfMultipleClickWith (const RecentMouseDown& other, int maxTimeBetweenMs) const noexcept
         {
             return time - other.time < RelativeTime::milliseconds (maxTimeBetweenMs)
-                    && std::abs (position.x - other.position.x) < getPositionToleranceForInputType()
-                    && std::abs (position.y - other.position.y) < getPositionToleranceForInputType()
+                    && std::abs (position.x - other.position.x) < 8
+                    && std::abs (position.y - other.position.y) < 8
                     && buttons == other.buttons
                     && peerID == other.peerID;
         }
-
-        int getPositionToleranceForInputType() const noexcept    { return isTouch ? 25 : 8;  }
     };
 
     RecentMouseDown mouseDowns[4];
     Time lastTime;
     bool mouseMovedSignificantlySincePressed = false;
 
-    void registerMouseDown (Point<float> screenPos, Time time, Component& component,
-                            const ModifierKeys modifiers, bool isTouchSource) noexcept
+    void registerMouseDown (Point<float> screenPos, Time time,
+                            Component& component, const ModifierKeys modifiers) noexcept
     {
         for (int i = numElementsInArray (mouseDowns); --i > 0;)
             mouseDowns[i] = mouseDowns[i - 1];
@@ -550,7 +546,6 @@ private:
         mouseDowns[0].position = screenPos;
         mouseDowns[0].time = time;
         mouseDowns[0].buttons = modifiers.withOnlyMouseButtons();
-        mouseDowns[0].isTouch = isTouchSource;
 
         if (auto* peer = component.getPeer())
             mouseDowns[0].peerID = peer->getUniqueID();
@@ -645,13 +640,7 @@ struct MouseInputSource::SourceList  : public Timer
 {
     SourceList()
     {
-       #if JUCE_ANDROID || JUCE_IOS
-        auto mainMouseInputType = MouseInputSource::InputSourceType::touch;
-       #else
-        auto mainMouseInputType = MouseInputSource::InputSourceType::mouse;
-       #endif
-
-        addSource (0, mainMouseInputType);
+        addSource (0, MouseInputSource::InputSourceType::mouse);
     }
 
     bool addSource();

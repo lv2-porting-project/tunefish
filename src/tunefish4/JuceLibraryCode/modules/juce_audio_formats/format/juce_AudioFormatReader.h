@@ -38,8 +38,6 @@ class AudioFormat;
     an AudioFormat object.
 
     @see AudioFormat, AudioFormatWriter
-
-    @tags{Audio}
 */
 class JUCE_API  AudioFormatReader
 {
@@ -113,14 +111,14 @@ public:
                int numSamplesToRead,
                bool fillLeftoverChannelsWithCopies);
 
-    /** Fills a section of an AudioBuffer from this reader.
+    /** Fills a section of an AudioSampleBuffer from this reader.
 
         This will convert the reader's fixed- or floating-point data to
         the buffer's floating-point format, and will try to intelligently
         cope with mismatches between the number of channels in the reader
         and the buffer.
     */
-    void read (AudioBuffer<float>* buffer,
+    void read (AudioSampleBuffer* buffer,
                int startSampleInDestBuffer,
                int numSamples,
                int64 readerStartSample,
@@ -198,19 +196,19 @@ public:
 
     //==============================================================================
     /** The sample-rate of the stream. */
-    double sampleRate = 0;
+    double sampleRate;
 
     /** The number of bits per sample, e.g. 16, 24, 32. */
-    unsigned int bitsPerSample = 0;
+    unsigned int bitsPerSample;
 
     /** The total number of samples in the audio stream. */
-    int64 lengthInSamples = 0;
+    int64 lengthInSamples;
 
     /** The total number of channels in the audio stream. */
-    unsigned int numChannels = 0;
+    unsigned int numChannels;
 
     /** Indicates whether the data is floating-point or fixed. */
-    bool usesFloatingPointData = false;
+    bool usesFloatingPointData;
 
     /** A set of metadata values that the reader has pulled out of the stream.
 

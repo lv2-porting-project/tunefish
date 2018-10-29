@@ -77,8 +77,6 @@ namespace juce
     @endcode
 
     @see StretchableLayoutResizerBar
-
-    @tags{GUI}
 */
 class JUCE_API  StretchableLayoutManager
 {
@@ -244,8 +242,8 @@ private:
         double minSize, maxSize, preferredSize;
     };
 
-    OwnedArray<ItemLayoutProperties> items;
-    int totalSize = 0;
+    OwnedArray <ItemLayoutProperties> items;
+    int totalSize;
 
     //==============================================================================
     static int sizeToRealSize (double size, int totalSpace);

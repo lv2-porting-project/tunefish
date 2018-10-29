@@ -36,8 +36,6 @@ namespace juce
     starting/stopping it may involve launching and killing threads.
 
     @see Timer
-
-    @tags{Core}
 */
 class JUCE_API  HighResolutionTimer
 {

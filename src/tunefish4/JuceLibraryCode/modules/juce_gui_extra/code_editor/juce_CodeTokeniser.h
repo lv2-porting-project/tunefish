@@ -33,8 +33,6 @@ namespace juce
     code editor.
 
     @see CodeDocument, CodeEditorComponent
-
-    @tags{GUI}
 */
 class JUCE_API  CodeTokeniser
 {

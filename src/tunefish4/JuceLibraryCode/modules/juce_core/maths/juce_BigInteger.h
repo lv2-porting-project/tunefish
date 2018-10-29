@@ -32,8 +32,6 @@ namespace juce
 
     Negative values are possible, but the value isn't stored as 2s-complement, so
     be careful if you use negative values and look at the values of individual bits.
-
-    @tags{Core}
 */
 class JUCE_API  BigInteger
 {
@@ -325,8 +323,8 @@ private:
     HeapBlock<uint32> heapAllocation;
     uint32 preallocated[numPreallocatedInts];
     size_t allocatedSize;
-    int highestBit = -1;
-    bool negative = false;
+    int highestBit;
+    bool negative;
 
     uint32* getValues() const noexcept;
     uint32* ensureSize (size_t);

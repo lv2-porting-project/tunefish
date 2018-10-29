@@ -38,8 +38,6 @@ class AudioThumbnailCache;
     a concrete implementation.
 
     @see AudioThumbnail, AudioThumbnailCache
-
-    @tags{Audio}
 */
 class JUCE_API  AudioThumbnailBase    : public ChangeBroadcaster,
                                         public AudioFormatWriter::ThreadedWriter::IncomingDataReceiver

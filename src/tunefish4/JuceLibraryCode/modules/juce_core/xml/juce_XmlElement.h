@@ -44,7 +44,7 @@ namespace juce
 */
 #define forEachXmlChildElement(parentXmlElement, childElementVariableName) \
 \
-    for (auto* childElementVariableName = (parentXmlElement).getFirstChildElement(); \
+    for (juce::XmlElement* childElementVariableName = (parentXmlElement).getFirstChildElement(); \
          childElementVariableName != nullptr; \
          childElementVariableName = childElementVariableName->getNextElement())
 
@@ -73,7 +73,7 @@ namespace juce
 */
 #define forEachXmlChildElementWithTagName(parentXmlElement, childElementVariableName, requiredTagName) \
 \
-    for (auto* childElementVariableName = (parentXmlElement).getChildByName (requiredTagName); \
+    for (juce::XmlElement* childElementVariableName = (parentXmlElement).getChildByName (requiredTagName); \
          childElementVariableName != nullptr; \
          childElementVariableName = childElementVariableName->getNextElementWithTagName (requiredTagName))
 
@@ -131,8 +131,6 @@ namespace juce
     @endcode
 
     @see XmlDocument
-
-    @tags{Core}
 */
 class JUCE_API  XmlElement
 {
@@ -634,11 +632,11 @@ public:
     void sortChildElements (ElementComparator& comparator,
                             bool retainOrderOfEquivalentItems = false)
     {
-        auto num = getNumChildElements();
+        const int num = getNumChildElements();
 
         if (num > 1)
         {
-            HeapBlock<XmlElement*> elems (num);
+            HeapBlock<XmlElement*> elems ((size_t) num);
             getChildElementsAsArray (elems);
             sortArray (comparator, (XmlElement**) elems, 0, num - 1, retainOrderOfEquivalentItems);
             reorderChildElements (elems, num);
@@ -736,7 +734,7 @@ private:
         String value;
 
     private:
-        XmlAttributeNode& operator= (const XmlAttributeNode&) = delete;
+        XmlAttributeNode& operator= (const XmlAttributeNode&) JUCE_DELETED_FUNCTION;
     };
 
     friend class XmlDocument;
@@ -760,7 +758,7 @@ private:
     // Sigh.. L"" or _T("") string literals are problematic in general, and really inappropriate
     // for XML tags. Use a UTF-8 encoded literal instead, or if you're really determined to use
     // UTF-16, cast it to a String and use the other constructor.
-    XmlElement (const wchar_t*) = delete;
+    XmlElement (const wchar_t*) JUCE_DELETED_FUNCTION;
 
     JUCE_LEAK_DETECTOR (XmlElement)
 };

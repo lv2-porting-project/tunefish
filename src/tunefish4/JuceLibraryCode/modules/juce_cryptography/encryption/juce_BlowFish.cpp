@@ -32,14 +32,14 @@ BlowFish::BlowFish (const void* const keyData, const int keyBytes)
     jassert (keyData != nullptr);
     jassert (keyBytes > 0);
 
-    static const uint32 initialPValues[18] =
+    static const uint32 initialPValues [18] =
     {
         0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822, 0x299f31d0, 0x082efa98, 0xec4e6c89,
         0x452821e6, 0x38d01377, 0xbe5466cf, 0x34e90c6c, 0xc0ac29b7, 0xc97c50dd, 0x3f84d5b5, 0xb5470917,
         0x9216d5d9, 0x8979fb1b
     };
 
-    static const uint32 initialSValues[4 * 256] =
+    static const uint32 initialSValues [4 * 256] =
     {
         0xd1310ba6, 0x98dfb5ac, 0x2ffd72db, 0xd01adfb7, 0xb8e1afed, 0x6a267e96, 0xba7c9045, 0xf12c7f99,
         0x24a19947, 0xb3916cf7, 0x0801f2e2, 0x858efc16, 0x636920d8, 0x71574e69, 0xa458fea3, 0xf4933d7e,
@@ -173,24 +173,23 @@ BlowFish::BlowFish (const void* const keyData, const int keyBytes)
 
     memcpy (p, initialPValues, sizeof (p));
 
-    int keyIndex = 0;
-
-    for (int i = 0; i < 4; ++i)
+    int i, j = 0;
+    for (i = 4; --i >= 0;)
     {
         s[i].malloc (256);
         memcpy (s[i], initialSValues + i * 256, 256 * sizeof (uint32));
     }
 
-    for (int i = 0; i < 18; ++i)
+    for (i = 0; i < 18; ++i)
     {
         uint32 d = 0;
 
         for (int k = 0; k < 4; ++k)
         {
-            d = (d << 8) | static_cast<const uint8*> (keyData)[keyIndex];
+            d = (d << 8) | static_cast<const uint8*> (keyData)[j];
 
-            if (++keyIndex >= keyBytes)
-                keyIndex = 0;
+            if (++j >= keyBytes)
+                j = 0;
         }
 
         p[i] = initialPValues[i] ^ d;
@@ -198,7 +197,7 @@ BlowFish::BlowFish (const void* const keyData, const int keyBytes)
 
     uint32 l = 0, r = 0;
 
-    for (int i = 0; i < 18; i += 2)
+    for (i = 0; i < 18; i += 2)
     {
         encrypt (l, r);
 
@@ -206,9 +205,9 @@ BlowFish::BlowFish (const void* const keyData, const int keyBytes)
         p[i + 1] = r;
     }
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < 4; ++i)
     {
-        for (int j = 0; j < 256; j += 2)
+        for (j = 0; j < 256; j += 2)
         {
             encrypt (l, r);
 
@@ -220,8 +219,8 @@ BlowFish::BlowFish (const void* const keyData, const int keyBytes)
 
 BlowFish::BlowFish (const BlowFish& other)
 {
-    for (auto& block : s)
-        block.malloc (256);
+    for (int i = 4; --i >= 0;)
+        s[i].malloc (256);
 
     operator= (other);
 }
@@ -246,8 +245,8 @@ uint32 BlowFish::F (const uint32 x) const noexcept
 
 void BlowFish::encrypt (uint32& data1, uint32& data2) const noexcept
 {
-    auto l = data1;
-    auto r = data2;
+    uint32 l = data1;
+    uint32 r = data2;
 
     for (int i = 0; i < 16; ++i)
     {
@@ -262,8 +261,8 @@ void BlowFish::encrypt (uint32& data1, uint32& data2) const noexcept
 
 void BlowFish::decrypt (uint32& data1, uint32& data2) const noexcept
 {
-    auto l = data1;
-    auto r = data2;
+    uint32 l = data1;
+    uint32 r = data2;
 
     for (int i = 17; i > 1; --i)
     {
@@ -278,10 +277,10 @@ void BlowFish::decrypt (uint32& data1, uint32& data2) const noexcept
 
 void BlowFish::encrypt (MemoryBlock& data) const
 {
-    auto size = data.getSize();
+    const size_t size = data.getSize();
     data.setSize (size + (8u - (size % 8u)));
 
-    auto success = encrypt (data.getData(), size, data.getSize());
+    int success = encrypt (data.getData(), size, data.getSize());
 
     ignoreUnused (success);
     jassert (success >= 0);
@@ -289,7 +288,7 @@ void BlowFish::encrypt (MemoryBlock& data) const
 
 void BlowFish::decrypt (MemoryBlock& data) const
 {
-    auto newSize = decrypt (data.getData(), data.getSize());
+    const int newSize = decrypt (data.getData(), data.getSize());
 
     if (newSize >= 0)
         data.setSize (static_cast<size_t> (newSize));
@@ -299,7 +298,7 @@ void BlowFish::decrypt (MemoryBlock& data) const
 
 int BlowFish::encrypt (void* data, size_t size, size_t bufferSize) const noexcept
 {
-    auto encryptedSize = pad (data, size, bufferSize);
+    const int encryptedSize = pad (data, size, bufferSize);
 
     if (encryptedSize >= 0 && apply (data, static_cast<size_t> (encryptedSize), &BlowFish::encrypt))
         return encryptedSize;
@@ -319,15 +318,16 @@ bool BlowFish::apply (void* data, size_t size, void (BlowFish::*op) (uint32&, ui
 {
     union AlignedAccessHelper
     {
-        int8 byte[sizeof(uint32) * 2];
+        int8   byte[sizeof(uint32) * 2];
         uint32 data[2];
     };
 
-    if ((size % 8u) != 0)
+    if ((size % 8u) != 0u)
         return false;
 
-    auto n = size / 8u;
-    auto* ptr = reinterpret_cast<AlignedAccessHelper*> (data);
+    const size_t n = size / 8u;
+
+    AlignedAccessHelper* ptr = reinterpret_cast<AlignedAccessHelper*> (data);
 
     for (size_t i = 0; i < n; ++i)
         (this->*op) (ptr[i].data[0], ptr[i].data[1]);
@@ -339,13 +339,12 @@ int BlowFish::pad (void* data, size_t size, size_t bufferSize) noexcept
 {
     // add padding according to https://tools.ietf.org/html/rfc2898#section-6.1.1
     const uint8 paddingSize = 8u - (size % 8u);
-    auto n = size + paddingSize;
+    const size_t n = size + paddingSize;
 
     if (n > bufferSize)
         return -1;
 
-    auto* dst = reinterpret_cast<uint8*> (data);
-
+    uint8* dst = reinterpret_cast<uint8*> (data);
     for (size_t i = size; i < n; ++i)
         dst[i] = paddingSize;
 
@@ -358,12 +357,12 @@ int BlowFish::unpad (const void* data, size_t size) noexcept
         return -1;
 
     // remove padding according to https://tools.ietf.org/html/rfc2898#section-6.1.1
-    auto paddingSize = reinterpret_cast<const uint8*>(data)[size - 1u];
+    uint8 paddingSize = reinterpret_cast<const uint8*>(data)[size - 1u];
 
     if (paddingSize == 0 || paddingSize > 8 || paddingSize > size)
         return -1;
 
-    return static_cast<int> (size - static_cast<size_t> (paddingSize));
+    return static_cast<int> (size - static_cast<size_t>(paddingSize));
 }
 
 //==============================================================================
@@ -377,16 +376,16 @@ public:
     static void fillMemoryBlockWithRandomData (MemoryBlock& block, Random& random)
     {
         const size_t n = block.getSize() / sizeof (int32);
-        auto* dst = reinterpret_cast<uint8*> (block.getData());
 
+        uint8* dst = reinterpret_cast<uint8*> (block.getData());
         for (size_t i = 0; i < n; ++i)
             dst[i] = static_cast<uint8> (random.nextInt(255));
     }
 
     void expectEqualData (const void* dataA, const void* dataB, size_t size, const String& failureMessage)
     {
-        auto* a = reinterpret_cast<const uint8*> (dataA);
-        auto* b = reinterpret_cast<const uint8*> (dataB);
+        const uint8* a = reinterpret_cast<const uint8*> (dataA);
+        const uint8* b = reinterpret_cast<const uint8*> (dataB);
 
         for (size_t i = 0; i < size; ++i)
             expectEquals ((int) a[i], (int) b[i], failureMessage);
@@ -431,7 +430,7 @@ public:
     void runTest() override
     {
         beginTest ("BlowFish");
-        auto random = getRandom();
+        Random random = getRandom();
 
         for (int i = 0; i < 100; ++i)
         {
@@ -457,8 +456,8 @@ public:
             {
                 // Test unaligned data encryption/decryption. This will be flagged up by a check for
                 // undefined behaviour!
-                auto nudge = static_cast<uintptr_t> (random.nextInt (sizeof(void*) - 1));
-                auto unalignedData = (void*) (reinterpret_cast<uintptr_t> (data.getData()) + nudge);
+                const uintptr_t nudge = static_cast<uintptr_t> (random.nextInt (sizeof(void*) - 1));
+                void* unalignedData = (void*) (reinterpret_cast<uintptr_t> (data.getData()) + nudge);
                 size_t newSize = data.getSize() - nudge;
 
                 encryptDecryptTest (bf, unalignedData, newSize - 8, newSize);

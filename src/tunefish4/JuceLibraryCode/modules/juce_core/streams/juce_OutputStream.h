@@ -31,8 +31,6 @@ namespace juce
     some or all of the virtual functions to implement their behaviour.
 
     @see InputStream, MemoryOutputStream, FileOutputStream
-
-    @tags{Core}
 */
 class JUCE_API  OutputStream
 {

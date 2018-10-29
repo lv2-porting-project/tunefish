@@ -58,8 +58,6 @@ namespace juce
                  audioDeviceManager.initialise (2, 2, nullptr, true, String(), nullptr);
             }
         );
-
-    @tags{Core}
 */
 class JUCE_API  RuntimePermissions
 {

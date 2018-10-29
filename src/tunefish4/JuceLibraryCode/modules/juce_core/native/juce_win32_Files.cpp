@@ -128,13 +128,8 @@ namespace WindowsFileHelpers
 }
 
 //==============================================================================
-#ifndef JUCE_GCC
- const juce_wchar File::separator = '\\';
- const StringRef File::separatorString ("\\");
-#endif
-
-juce_wchar File::getSeparatorChar()    { return '\\'; }
-StringRef File::getSeparatorString()   { return "\\"; }
+const juce_wchar File::separator = '\\';
+const String File::separatorString ("\\");
 
 void* getUser32Function (const char*);
 
@@ -1051,17 +1046,17 @@ void NamedPipe::close()
         SetEvent (pimpl->cancelEvent);
 
         ScopedWriteLock sl (lock);
-        pimpl.reset();
+        pimpl = nullptr;
     }
 }
 
 bool NamedPipe::openInternal (const String& pipeName, const bool createPipe, bool mustNotExist)
 {
-    pimpl.reset (new Pimpl (pipeName, createPipe, mustNotExist));
+    pimpl = new Pimpl (pipeName, createPipe, mustNotExist);
 
     if (createPipe && pimpl->pipeH == INVALID_HANDLE_VALUE)
     {
-        pimpl.reset();
+        pimpl = nullptr;
         return false;
     }
 

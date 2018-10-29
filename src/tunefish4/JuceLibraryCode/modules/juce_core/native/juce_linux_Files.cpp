@@ -136,14 +136,14 @@ File File::getSpecialLocation (const SpecialLocationType type)
         case invokedExecutableFile:
             if (juce_argv != nullptr && juce_argc > 0)
                 return File (CharPointer_UTF8 (juce_argv[0]));
-            // deliberate fall-through...
+            // fall-through
 
         case currentExecutableFile:
         case currentApplicationFile:
            #if ! JUCE_STANDALONE_APPLICATION
             return juce_getExecutableFile();
            #endif
-            // deliberate fall-through if this is not a shared-library
+            // fall-through
 
         case hostApplicationPath:
         {
@@ -209,17 +209,22 @@ bool Process::openDocument (const String& fileName, const String& parameters)
         cmdString = cmdLines.joinIntoString (" || ");
     }
 
-    const char* const argv[4] = { "/bin/sh", "-c", cmdString.toUTF8(), 0 };
+    const char* const argv[4] = { "/bin/sh", "-c", cmdString.toUTF8(), nullptr };
 
+#if JUCE_USE_VFORK
+    const int cpid = vfork();
+#else
     const int cpid = fork();
+#endif
 
     if (cpid == 0)
     {
+#if ! JUCE_USE_VFORK
         setsid();
-
+#endif
         // Child process
-        execve (argv[0], (char**) argv, environ);
-        exit (0);
+        if (execvp (argv[0], (char**) argv) < 0)
+            _exit (0);
     }
 
     return cpid >= 0;

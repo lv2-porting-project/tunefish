@@ -104,7 +104,7 @@ namespace AiffFileHelpers
             if (values.getAllKeys().contains ("MidiUnityNote", true))
             {
                 block.setSize ((sizeof (InstChunk) + 3) & ~(size_t) 3, true);
-                auto& inst = *static_cast<InstChunk*> (block.getData());
+                InstChunk& inst = *static_cast<InstChunk*> (block.getData());
 
                 inst.baseNote      = getValue8 (values, "MidiUnityNote", "60");
                 inst.detune        = getValue8 (values, "Detune", "0");
@@ -168,7 +168,7 @@ namespace AiffFileHelpers
 
             switch (key)
             {
-                case minor:     keyString = "minor";        break;
+                case minor:     keyString = "major";        break;
                 case major:     keyString = "major";        break;
                 case neither:   keyString = "neither";      break;
                 case both:      keyString = "both";         break;
@@ -238,8 +238,8 @@ namespace AiffFileHelpers
 
             StringArray tagsArray;
 
-            auto* data = static_cast<const char*> (mb.getData());
-            auto* dataEnd = data + mb.getSize();
+            const char* data = static_cast<const char*> (mb.getData());
+            const char* dataEnd = data + mb.getSize();
 
             while (data < dataEnd)
             {
@@ -247,7 +247,7 @@ namespace AiffFileHelpers
 
                 if (isValidTag (data))
                 {
-                    auto tag = String (CharPointer_UTF8 (data), CharPointer_UTF8 (dataEnd));
+                    const String tag = String (CharPointer_UTF8 (data), CharPointer_UTF8 (dataEnd));
                     isGenre = isAppleGenre (tag);
                     tagsArray.add (tag);
                 }
@@ -276,14 +276,22 @@ namespace AiffFileHelpers
             const String noteString ("CueNote");
             const String identifierString ("Identifier");
 
-            for (auto& key : values.getAllKeys())
+            const StringArray& keys = values.getAllKeys();
+
+            for (int i = 0; i < keys.size(); ++i)
             {
+                const String key (keys[i]);
+
                 if (key.startsWith (noteString))
                     continue; // zero identifier IS valid in a COMT chunk
 
                 if (key.startsWith (cueString) && key.contains (identifierString))
-                    if (values.getValue (key, "-1").getIntValue() == 0)
+                {
+                    const int value = values.getValue (key, "-1").getIntValue();
+
+                    if (value == 0)
                         return true;
+                }
             }
 
             return false;
@@ -291,15 +299,16 @@ namespace AiffFileHelpers
 
         static void create (MemoryBlock& block, const StringPairArray& values)
         {
-            auto numCues = values.getValue ("NumCuePoints", "0").getIntValue();
+            const int numCues = values.getValue ("NumCuePoints", "0").getIntValue();
 
             if (numCues > 0)
             {
                 MemoryOutputStream out (block, false);
+
                 out.writeShortBigEndian ((short) numCues);
 
-                auto numCueLabels = values.getValue ("NumCueLabels", "0").getIntValue();
-                auto idOffset = metaDataContainsZeroIdentifiers (values) ? 1 : 0; // can't have zero IDs in AIFF
+                const int numCueLabels = values.getValue ("NumCueLabels", "0").getIntValue();
+                const int idOffset = metaDataContainsZeroIdentifiers (values) ? 1 : 0; // can't have zero IDs in AIFF
 
                #if JUCE_DEBUG
                 Array<int> identifiers;
@@ -307,21 +316,21 @@ namespace AiffFileHelpers
 
                 for (int i = 0; i < numCues; ++i)
                 {
-                    auto prefixCue = "Cue" + String (i);
-                    auto identifier = idOffset + values.getValue (prefixCue + "Identifier", "1").getIntValue();
+                    const String prefixCue ("Cue" + String (i));
+                    const int identifier = idOffset + values.getValue (prefixCue + "Identifier", "1").getIntValue();
 
                    #if JUCE_DEBUG
                     jassert (! identifiers.contains (identifier));
                     identifiers.add (identifier);
                    #endif
 
-                    auto offset = values.getValue (prefixCue + "Offset", "0").getIntValue();
-                    auto label = "CueLabel" + String (i);
+                    const int offset = values.getValue (prefixCue + "Offset", "0").getIntValue();
+                    String label ("CueLabel" + String (i));
 
                     for (int labelIndex = 0; labelIndex < numCueLabels; ++labelIndex)
                     {
-                        auto prefixLabel = "CueLabel" + String (labelIndex);
-                        auto labelIdentifier = idOffset + values.getValue (prefixLabel + "Identifier", "1").getIntValue();
+                        const String prefixLabel ("CueLabel" + String (labelIndex));
+                        const int labelIdentifier = idOffset + values.getValue (prefixLabel + "Identifier", "1").getIntValue();
 
                         if (labelIdentifier == identifier)
                         {
@@ -333,7 +342,7 @@ namespace AiffFileHelpers
                     out.writeShortBigEndian ((short) identifier);
                     out.writeIntBigEndian (offset);
 
-                    auto labelLength = jmin ((size_t) 254, label.getNumBytesAsUTF8()); // seems to need null terminator even though it's a pstring
+                    const size_t labelLength = jmin ((size_t) 254, label.getNumBytesAsUTF8()); // seems to need null terminator even though it's a pstring
                     out.writeByte ((char) labelLength + 1);
                     out.write (label.toUTF8(), labelLength);
                     out.writeByte (0);
@@ -350,7 +359,7 @@ namespace AiffFileHelpers
     {
         static void create (MemoryBlock& block, const StringPairArray& values)
         {
-            auto numNotes = values.getValue ("NumCueNotes", "0").getIntValue();
+            const int numNotes = values.getValue ("NumCueNotes", "0").getIntValue();
 
             if (numNotes > 0)
             {
@@ -359,14 +368,14 @@ namespace AiffFileHelpers
 
                 for (int i = 0; i < numNotes; ++i)
                 {
-                    auto prefix = "CueNote" + String (i);
+                    const String prefix ("CueNote" + String (i));
 
                     out.writeIntBigEndian (values.getValue (prefix + "TimeStamp", "0").getIntValue());
                     out.writeShortBigEndian ((short) values.getValue (prefix + "Identifier", "0").getIntValue());
 
-                    auto comment = values.getValue (prefix + "Text", String());
-                    auto commentLength = jmin (comment.getNumBytesAsUTF8(), (size_t) 65534);
+                    const String comment (values.getValue (prefix + "Text", String()));
 
+                    const size_t commentLength = jmin (comment.getNumBytesAsUTF8(), (size_t) 65534);
                     out.writeShortBigEndian ((short) commentLength + 1);
                     out.write (comment.toUTF8(), commentLength);
                     out.writeByte (0);
@@ -390,10 +399,10 @@ public:
 
         if (input->readInt() == chunkName ("FORM"))
         {
-            auto len = input->readIntBigEndian();
-            auto end = input->getPosition() + len;
-            auto nextType = input->readInt();
+            const int len = input->readIntBigEndian();
+            const int64 end = input->getPosition() + len;
 
+            const int nextType = input->readInt();
             if (nextType == chunkName ("AIFF") || nextType == chunkName ("AIFC"))
             {
                 bool hasGotVer = false;
@@ -402,15 +411,15 @@ public:
 
                 while (input->getPosition() < end)
                 {
-                    auto type = input->readInt();
-                    auto length = (uint32) input->readIntBigEndian();
-                    auto chunkEnd = input->getPosition() + length;
+                    const int type = input->readInt();
+                    const uint32 length = (uint32) input->readIntBigEndian();
+                    const int64 chunkEnd = input->getPosition() + length;
 
                     if (type == chunkName ("FVER"))
                     {
                         hasGotVer = true;
-                        auto ver = input->readIntBigEndian();
 
+                        const int ver = input->readIntBigEndian();
                         if (ver != 0 && ver != (int) 0xa2805140)
                             break;
                     }
@@ -432,7 +441,7 @@ public:
                              || (byte0 == 0x40 && sampleRateBytes[1] > 0x1C))
                             break;
 
-                        auto sampRate = ByteOrder::bigEndianInt (sampleRateBytes + 2);
+                        unsigned int sampRate = ByteOrder::bigEndianInt (sampleRateBytes + 2);
                         sampRate >>= (16414 - ByteOrder::bigEndianShort (sampleRateBytes));
                         sampleRate = (int) sampRate;
 
@@ -444,7 +453,7 @@ public:
                         }
                         else
                         {
-                            auto compType = input->readInt();
+                            const int compType = input->readInt();
 
                             if (compType == chunkName ("NONE") || compType == chunkName ("twos"))
                             {
@@ -470,13 +479,13 @@ public:
                     {
                         hasGotData = true;
 
-                        auto offset = input->readIntBigEndian();
+                        const int offset = input->readIntBigEndian();
                         dataChunkStart = input->getPosition() + 4 + offset;
                         lengthInSamples = (bytesPerFrame > 0) ? jmin (lengthInSamples, ((int64) length) / (int64) bytesPerFrame) : 0;
                     }
                     else if (type == chunkName ("MARK"))
                     {
-                        auto numCues = (uint16) input->readShortBigEndian();
+                        const uint16 numCues = (uint16) input->readShortBigEndian();
 
                         // these two are always the same for AIFF-read files
                         metadataValues.set ("NumCuePoints", String (numCues));
@@ -484,9 +493,9 @@ public:
 
                         for (uint16 i = 0; i < numCues; ++i)
                         {
-                            auto identifier = (uint16) input->readShortBigEndian();
-                            auto offset = (uint32) input->readIntBigEndian();
-                            auto stringLength = (uint8) input->readByte();
+                            uint16 identifier = (uint16) input->readShortBigEndian();
+                            uint32 offset = (uint32) input->readIntBigEndian();
+                            uint8 stringLength = (uint8) input->readByte();
                             MemoryBlock textBlock;
                             input->readIntoMemoryBlock (textBlock, stringLength);
 
@@ -496,30 +505,30 @@ public:
                             if ((stringLength & 1) == 0)
                                 input->readByte();
 
-                            auto prefixCue = "Cue" + String (i);
+                            const String prefixCue ("Cue" + String (i));
                             metadataValues.set (prefixCue + "Identifier", String (identifier));
                             metadataValues.set (prefixCue + "Offset", String (offset));
 
-                            auto prefixLabel = "CueLabel" + String (i);
+                            const String prefixLabel ("CueLabel" + String (i));
                             metadataValues.set (prefixLabel + "Identifier", String (identifier));
                             metadataValues.set (prefixLabel + "Text", textBlock.toString());
                         }
                     }
                     else if (type == chunkName ("COMT"))
                     {
-                        auto numNotes = (uint16) input->readShortBigEndian();
+                        const uint16 numNotes = (uint16) input->readShortBigEndian();
                         metadataValues.set ("NumCueNotes", String (numNotes));
 
                         for (uint16 i = 0; i < numNotes; ++i)
                         {
-                            auto timestamp = (uint32) input->readIntBigEndian();
-                            auto identifier = (uint16) input->readShortBigEndian(); // may be zero in this case
-                            auto stringLength = (uint16) input->readShortBigEndian();
+                            uint32 timestamp = (uint32) input->readIntBigEndian();
+                            uint16 identifier = (uint16) input->readShortBigEndian(); // may be zero in this case
+                            uint16 stringLength = (uint16) input->readShortBigEndian();
 
                             MemoryBlock textBlock;
                             input->readIntoMemoryBlock (textBlock, stringLength + (stringLength & 1));
 
-                            auto prefix = "CueNote" + String (i);
+                            const String prefix ("CueNote" + String (i));
                             metadataValues.set (prefix + "TimeStamp", String (timestamp));
                             metadataValues.set (prefix + "Identifier", String (identifier));
                             metadataValues.set (prefix + "Text", textBlock.toString());
@@ -600,7 +609,7 @@ public:
     }
 
     template <typename Endianness>
-    static void copySampleData (unsigned int bitsPerSample, bool usesFloatingPointData,
+    static void copySampleData (unsigned int bitsPerSample, const bool usesFloatingPointData,
                                 int* const* destSamples, int startOffsetInDestBuffer, int numDestChannels,
                                 const void* sourceData, int numChannels, int numSamples) noexcept
     {
@@ -668,7 +677,7 @@ public:
         if (writeFailed)
             return false;
 
-        auto bytes = numChannels * (size_t) numSamples * bitsPerSample / 8;
+        const size_t bytes = numChannels * (size_t) numSamples * bitsPerSample / 8;
         tempBlock.ensureSize (bytes, false);
 
         switch (bitsPerSample)
@@ -713,10 +722,10 @@ private:
         // to be able to seek back to write the header
         jassert (couldSeekOk);
 
-        auto headerLen = (int) (54 + (markChunk.getSize() > 0 ? markChunk.getSize() + 8 : 0)
-                                   + (comtChunk.getSize() > 0 ? comtChunk.getSize() + 8 : 0)
-                                   + (instChunk.getSize() > 0 ? instChunk.getSize() + 8 : 0));
-        auto audioBytes = (int) (lengthInSamples * ((bitsPerSample * numChannels) / 8));
+        const int headerLen = (int) (54 + (markChunk.getSize() > 0 ? markChunk.getSize() + 8 : 0)
+                                        + (comtChunk.getSize() > 0 ? comtChunk.getSize() + 8 : 0)
+                                        + (instChunk.getSize() > 0 ? instChunk.getSize() + 8 : 0));
+        int audioBytes = (int) (lengthInSamples * ((bitsPerSample * numChannels) / 8));
         audioBytes += (audioBytes & 1);
 
         output->writeInt (chunkName ("FORM"));
@@ -728,7 +737,7 @@ private:
         output->writeIntBigEndian ((int) lengthInSamples);
         output->writeShortBigEndian ((short) bitsPerSample);
 
-        uint8 sampleRateBytes[10] = {};
+        uint8 sampleRateBytes[10] = { 0 };
 
         if (sampleRate <= 1)
         {
@@ -749,8 +758,8 @@ private:
             else
             {
                 int n = (int) sampleRate;
-                int i;
 
+                int i;
                 for (i = 0; i <= 32 ; ++i)
                 {
                     if ((n & mask) != 0)
@@ -840,7 +849,7 @@ public:
 
     void getSample (int64 sample, float* result) const noexcept override
     {
-        auto num = (int) numChannels;
+        const int num = (int) numChannels;
 
         if (map == nullptr || ! mappedSection.contains (sample))
         {
@@ -928,17 +937,24 @@ private:
 };
 
 //==============================================================================
-AiffAudioFormat::AiffAudioFormat()  : AudioFormat (aiffFormatName, ".aiff .aif") {}
-AiffAudioFormat::~AiffAudioFormat() {}
+AiffAudioFormat::AiffAudioFormat()   : AudioFormat (aiffFormatName, ".aiff .aif")
+{
+}
+
+AiffAudioFormat::~AiffAudioFormat()
+{
+}
 
 Array<int> AiffAudioFormat::getPossibleSampleRates()
 {
-    return { 22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000 };
+    const int rates[] = { 22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000, 0 };
+    return Array<int> (rates);
 }
 
 Array<int> AiffAudioFormat::getPossibleBitDepths()
 {
-     return { 8, 16, 24 };
+    const int depths[] = { 8, 16, 24, 0 };
+    return Array<int> (depths);
 }
 
 bool AiffAudioFormat::canDoStereo() { return true; }

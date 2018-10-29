@@ -33,10 +33,8 @@ namespace juce
 
     This object can either be used to represent one of the standard mouse
     cursor shapes, or a custom one generated from an image.
-
-    @tags{GUI}
 */
-class JUCE_API  MouseCursor  final
+class JUCE_API  MouseCursor
 {
 public:
     //==============================================================================
@@ -168,7 +166,7 @@ private:
     //==============================================================================
     class SharedCursorHandle;
     friend class SharedCursorHandle;
-    SharedCursorHandle* cursorHandle = nullptr;
+    SharedCursorHandle* cursorHandle;
 
     friend class MouseInputSourceInternal;
     void showInWindow (ComponentPeer* window) const;

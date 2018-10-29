@@ -26,8 +26,6 @@ namespace juce
 //==============================================================================
 /**
     Maps a file into virtual memory for easy reading and/or writing.
-
-    @tags{Core}
 */
 class JUCE_API  MemoryMappedFile
 {
@@ -98,13 +96,13 @@ public:
 
 private:
     //==============================================================================
-    void* address = nullptr;
+    void* address;
     Range<int64> range;
 
    #if JUCE_WINDOWS
-    void* fileHandle = nullptr;
+    void* fileHandle;
    #else
-    int fileHandle = 0;
+    int fileHandle;
    #endif
 
     void openInternal (const File&, AccessMode, bool);

@@ -125,7 +125,7 @@ AudioPluginInstance* AudioPluginFormat::createInstanceFromDescription (const Plu
         createPluginInstanceAsync (desc, initialSampleRate, initialBufferSize, eventSignaler.release());
     else
         createPluginInstance (desc, initialSampleRate, initialBufferSize,
-                              eventSignaler.get(), EventSignaler::staticCompletionCallback);
+                              eventSignaler, EventSignaler::staticCompletionCallback);
 
 
     waitForCreation.wait();

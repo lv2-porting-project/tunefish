@@ -85,8 +85,6 @@ namespace juce
     @endcode
 
     @see JUCEApplicationBase, START_JUCE_APPLICATION
-
-    @tags{GUI}
 */
 class JUCE_API  JUCEApplication  : public JUCEApplicationBase,
                                    public ApplicationCommandTarget

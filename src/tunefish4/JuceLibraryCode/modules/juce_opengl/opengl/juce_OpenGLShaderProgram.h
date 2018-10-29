@@ -30,8 +30,6 @@ namespace juce
 //==============================================================================
 /**
     Manages an OpenGL shader program.
-
-    @tags{OpenGL}
 */
 class JUCE_API  OpenGLShaderProgram
 {

@@ -46,8 +46,6 @@ namespace juce
     ChangeBroadcaster base class.
 
     @see ChangeBroadcaster
-
-    @tags{GUI}
 */
 class JUCE_API FileBasedDocument  : public ChangeBroadcaster
 {

@@ -33,8 +33,6 @@ namespace juce
     when it's clicked.
 
     @see Button
-
-    @tags{GUI}
 */
 class JUCE_API  HyperlinkButton  : public Button
 {
@@ -92,15 +90,6 @@ public:
         This won't affect the button's height.
     */
     void changeWidthToFitText();
-
-    //==============================================================================
-    /** Sets the style of justification to be used for positioning the text.
-        (The default is Justification::centred)
-    */
-    void setJustificationType (Justification justification);
-
-    /** Returns the type of justification, as set in setJustificationType(). */
-    Justification getJustificationType() const noexcept         { return justification; }
 
 protected:
     //==============================================================================

@@ -46,8 +46,6 @@ namespace juce
     button - for more info, see the DocumentWindow help.
 
     @see DocumentWindow, ResizableWindow
-
-    @tags{GUI}
 */
 class JUCE_API  DialogWindow   : public DocumentWindow
 {
@@ -194,7 +192,8 @@ public:
                             Colour backgroundColour,
                             bool escapeKeyTriggersCloseButton,
                             bool shouldBeResizable = false,
-                            bool useBottomRightCornerResizer = false);
+                            bool useBottomRightCornerResizer = false,
+                            bool useNativeTitleBar = false);
 
    #if JUCE_MODAL_LOOPS_PERMITTED || DOXYGEN
     /** Easy way of quickly showing a dialog box containing a given component.
@@ -240,7 +239,8 @@ public:
                                 Colour backgroundColour,
                                 bool escapeKeyTriggersCloseButton,
                                 bool shouldBeResizable = false,
-                                bool useBottomRightCornerResizer = false);
+                                bool useBottomRightCornerResizer = false,
+                                bool useNativeTitleBar = false);
    #endif
 
 

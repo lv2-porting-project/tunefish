@@ -49,8 +49,6 @@ namespace juce
     TypeOfCriticalSectionToUse parameter, instead of the default DummyCriticalSection.
 
     @see Array, OwnedArray, ReferenceCountedArray, StringArray, CriticalSection
-
-    @tags{Core}
 */
 template <class ElementType, class TypeOfCriticalSectionToUse = DummyCriticalSection>
 class SortedSet

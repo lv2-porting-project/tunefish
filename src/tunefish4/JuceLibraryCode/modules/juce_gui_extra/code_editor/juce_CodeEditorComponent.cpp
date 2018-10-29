@@ -195,9 +195,8 @@ private:
     {
         jassert (index <= line.length());
 
-        auto t = line.getCharPointer();
+        String::CharPointerType t (line.getCharPointer());
         int col = 0;
-
         for (int i = 0; i < index; ++i)
         {
             if (t.getAndAdvance() != '\t')
@@ -209,7 +208,8 @@ private:
         return col;
     }
 
-    static void addToken (Array<SyntaxToken>& dest, const String& text, int length, int type)
+    static void addToken (Array<SyntaxToken>& dest, const String& text,
+                          const int length, const int type)
     {
         if (length > 1000)
         {
@@ -289,7 +289,7 @@ public:
     void paint (Graphics& g) override
     {
         jassert (dynamic_cast<CodeEditorComponent*> (getParentComponent()) != nullptr);
-        auto& editor = *static_cast<CodeEditorComponent*> (getParentComponent());
+        const CodeEditorComponent& editor = *static_cast<CodeEditorComponent*> (getParentComponent());
 
         g.fillAll (editor.findColour (CodeEditorComponent::backgroundColourId)
                     .overlaidWith (editor.findColour (lineNumberBackgroundId)));
@@ -301,10 +301,10 @@ public:
         const int lastLineToDraw = jmin (editor.lines.size(), clip.getBottom() / lineH + 1,
                                          lastNumLines - editor.firstLineOnScreen);
 
-        auto lineNumberFont = editor.getFont().withHeight (jmin (13.0f, lineHeightFloat * 0.8f));
-        auto w = getWidth() - 2.0f;
-        GlyphArrangement ga;
+        const Font lineNumberFont (editor.getFont().withHeight (jmin (13.0f, lineHeightFloat * 0.8f)));
+        const float w = getWidth() - 2.0f;
 
+        GlyphArrangement ga;
         for (int i = firstLineToDraw; i < lastLineToDraw; ++i)
             ga.addFittedText (lineNumberFont, String (editor.firstLineOnScreen + i + 1),
                               0, (float) (lineH * i), w, lineHeightFloat,
@@ -316,7 +316,7 @@ public:
 
     void documentChanged (CodeDocument& doc, int newFirstLine)
     {
-        auto newNumLines = doc.getNumLines();
+        const int newNumLines = doc.getNumLines();
 
         if (newNumLines != lastNumLines || firstLine != newFirstLine)
         {
@@ -339,7 +339,7 @@ CodeEditorComponent::CodeEditorComponent (CodeDocument& doc, CodeTokeniser* cons
       selectionEnd (doc, 0, 0),
       codeTokeniser (tokeniser)
 {
-    pimpl.reset (new Pimpl (*this));
+    pimpl = new Pimpl (*this);
 
     caretPos.setPositionMaintained (true);
     selectionStart.setPositionMaintained (true);
@@ -349,8 +349,7 @@ CodeEditorComponent::CodeEditorComponent (CodeDocument& doc, CodeTokeniser* cons
     setMouseCursor (MouseCursor::IBeamCursor);
     setWantsKeyboardFocus (true);
 
-    caret.reset (getLookAndFeel().createCaretComponent (this));
-    addAndMakeVisible (caret.get());
+    addAndMakeVisible (caret = getLookAndFeel().createCaretComponent (this));
 
     addAndMakeVisible (verticalScrollBar);
     verticalScrollBar.setSingleStepSize (1.0);
@@ -367,14 +366,14 @@ CodeEditorComponent::CodeEditorComponent (CodeDocument& doc, CodeTokeniser* cons
 
     setLineNumbersShown (true);
 
-    verticalScrollBar.addListener (pimpl.get());
-    horizontalScrollBar.addListener (pimpl.get());
-    document.addListener (pimpl.get());
+    verticalScrollBar.addListener (pimpl);
+    horizontalScrollBar.addListener (pimpl);
+    document.addListener (pimpl);
 }
 
 CodeEditorComponent::~CodeEditorComponent()
 {
-    document.removeListener (pimpl.get());
+    document.removeListener (pimpl);
 }
 
 int CodeEditorComponent::getGutterSize() const noexcept
@@ -399,14 +398,14 @@ bool CodeEditorComponent::isTextInputActive() const
     return true;
 }
 
-void CodeEditorComponent::setTemporaryUnderlining (const Array<Range<int>>&)
+void CodeEditorComponent::setTemporaryUnderlining (const Array<Range<int> >&)
 {
     jassertfalse; // TODO Windows IME not yet supported for this comp..
 }
 
 Rectangle<int> CodeEditorComponent::getCaretRectangle()
 {
-    return getLocalArea (caret.get(), caret->getLocalBounds());
+    return getLocalArea (caret, caret->getLocalBounds());
 }
 
 void CodeEditorComponent::setLineNumbersShown (const bool shouldBeShown)
@@ -414,13 +413,10 @@ void CodeEditorComponent::setLineNumbersShown (const bool shouldBeShown)
     if (showLineNumbers != shouldBeShown)
     {
         showLineNumbers = shouldBeShown;
-        gutter.reset();
+        gutter = nullptr;
 
         if (shouldBeShown)
-        {
-            gutter.reset (new GutterComponent());
-            addAndMakeVisible (gutter.get());
-        }
+            addAndMakeVisible (gutter = new GutterComponent());
 
         resized();
     }
@@ -433,16 +429,16 @@ void CodeEditorComponent::setReadOnly (bool b) noexcept
         readOnly = b;
 
         if (b)
-            removeChildComponent (caret.get());
+            removeChildComponent (caret);
         else
-            addAndMakeVisible (caret.get());
+            addAndMakeVisible (caret);
     }
 }
 
 //==============================================================================
 void CodeEditorComponent::resized()
 {
-    auto visibleWidth = getWidth() - scrollbarThickness - getGutterSize();
+    const int visibleWidth = getWidth() - scrollbarThickness - getGutterSize();
     linesOnScreen   = jmax (1, (getHeight() - scrollbarThickness) / lineHeight);
     columnsOnScreen = jmax (1, (int) (visibleWidth / charWidth));
     lines.clear();
@@ -507,8 +503,9 @@ void CodeEditorComponent::rebuildLineTokens()
 {
     pimpl->cancelPendingUpdate();
 
-    auto numNeeded = linesOnScreen + 1;
-    auto minLineToRepaint = numNeeded;
+    const int numNeeded = linesOnScreen + 1;
+
+    int minLineToRepaint = numNeeded;
     int maxLineToRepaint = 0;
 
     if (numNeeded != lines.size())
@@ -585,8 +582,8 @@ void CodeEditorComponent::moveCaretTo (const CodeDocument::Position& newPos, con
     {
         if (dragType == notDragging)
         {
-            if (std::abs (caretPos.getPosition() - selectionStart.getPosition())
-                  < std::abs (caretPos.getPosition() - selectionEnd.getPosition()))
+            if (abs (caretPos.getPosition() - selectionStart.getPosition())
+                  < abs (caretPos.getPosition() - selectionEnd.getPosition()))
                 dragType = draggingSelectionStart;
             else
                 dragType = draggingSelectionEnd;
@@ -598,7 +595,7 @@ void CodeEditorComponent::moveCaretTo (const CodeDocument::Position& newPos, con
 
             if (selectionEnd.getPosition() < selectionStart.getPosition())
             {
-                auto temp = selectionStart;
+                const CodeDocument::Position temp (selectionStart);
                 selectionStart = selectionEnd;
                 selectionEnd = temp;
 
@@ -611,7 +608,7 @@ void CodeEditorComponent::moveCaretTo (const CodeDocument::Position& newPos, con
 
             if (selectionEnd.getPosition() < selectionStart.getPosition())
             {
-                auto temp = selectionStart;
+                const CodeDocument::Position temp (selectionStart);
                 selectionStart = selectionEnd;
                 selectionEnd = temp;
 

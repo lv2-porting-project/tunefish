@@ -32,8 +32,6 @@ namespace juce
 //==============================================================================
 /**
     Implements a plugin format manager for VSTs.
-
-    @tags{Audio}
 */
 class JUCE_API  VSTPluginFormat   : public AudioPluginFormat
 {

@@ -249,6 +249,10 @@ extern void* getUser32Function (const char*);
   };
 #endif
 
+#if JUCE_MINGW
+static bool canUseMultiTouch()   { return false; }
+static void checkForPointerAPI() { }
+#else
 typedef BOOL (WINAPI* RegisterTouchWindowFunc) (HWND, ULONG);
 typedef BOOL (WINAPI* GetTouchInputInfoFunc) (HTOUCHINPUT, UINT, TOUCHINPUT*, int);
 typedef BOOL (WINAPI* CloseTouchInputHandleFunc) (HTOUCHINPUT);
@@ -302,9 +306,7 @@ static void checkForPointerAPI()
                      && getPointerTouchInfo    != nullptr
                      && getPointerPenInfo      != nullptr);
 }
-
-typedef void (*SettingChangeCallbackFunc) (void);
-extern SettingChangeCallbackFunc settingChangeCallback;
+#endif
 
 static Rectangle<int> rectangleFromRECT (const RECT& r) noexcept
 {
@@ -620,7 +622,6 @@ private:
 };
 
 //==============================================================================
-Image createSnapshotOfNativeWindow (void*);
 Image createSnapshotOfNativeWindow (void* nativeWindowHandle)
 {
     auto hwnd = (HWND) nativeWindowHandle;
@@ -642,116 +643,72 @@ Image createSnapshotOfNativeWindow (void* nativeWindowHandle)
 //==============================================================================
 namespace IconConverters
 {
-    Image createImageFromHICON (HICON icon)
+    Image createImageFromHBITMAP (HBITMAP bitmap)
     {
-        if (icon == nullptr)
-            return {};
+        Image im;
 
-        struct ScopedICONINFO   : public ICONINFO
+        if (bitmap != 0)
         {
-            ScopedICONINFO()
+            BITMAP bm;
+
+            if (GetObject (bitmap, sizeof (BITMAP), &bm)
+                 && bm.bmWidth > 0 && bm.bmHeight > 0)
             {
-                hbmColor = nullptr;
-                hbmMask = nullptr;
-            }
+                auto tempDC = GetDC (0);
+                auto dc = CreateCompatibleDC (tempDC);
+                ReleaseDC (0, tempDC);
 
-            ~ScopedICONINFO()
-            {
-                if (hbmColor != nullptr)
-                    ::DeleteObject (hbmColor);
+                SelectObject (dc, bitmap);
 
-                if (hbmMask != nullptr)
-                    ::DeleteObject (hbmMask);
-            }
-        };
+                im = Image (Image::ARGB, bm.bmWidth, bm.bmHeight, true);
+                Image::BitmapData imageData (im, Image::BitmapData::writeOnly);
 
-        ScopedICONINFO info;
-
-        if (! SUCCEEDED (::GetIconInfo (icon, &info)))
-            return {};
-
-        BITMAP bm;
-
-        if (! (::GetObject (info.hbmColor, sizeof (BITMAP), &bm)
-               && bm.bmWidth > 0 && bm.bmHeight > 0))
-            return {};
-
-        if (auto* tempDC = ::GetDC (nullptr))
-        {
-            if (auto* dc = ::CreateCompatibleDC (tempDC))
-            {
-                BITMAPV5HEADER header = { 0 };
-                header.bV5Size = sizeof (BITMAPV5HEADER);
-                header.bV5Width = bm.bmWidth;
-                header.bV5Height = -bm.bmHeight;
-                header.bV5Planes = 1;
-                header.bV5Compression = BI_RGB;
-                header.bV5BitCount = 32;
-                header.bV5RedMask = 0x00FF0000;
-                header.bV5GreenMask = 0x0000FF00;
-                header.bV5BlueMask = 0x000000FF;
-                header.bV5AlphaMask = 0xFF000000;
-                header.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
-                header.bV5Intent = LCS_GM_IMAGES;
-
-                uint32* bitmapImageData = nullptr;
-
-                if (auto* dib = ::CreateDIBSection (tempDC, (BITMAPINFO*) &header, DIB_RGB_COLORS,
-                                                    (void**) &bitmapImageData, nullptr, 0))
+                for (int y = bm.bmHeight; --y >= 0;)
                 {
-                    auto oldObject = ::SelectObject (dc, dib);
-
-                    auto numPixels = bm.bmWidth * bm.bmHeight;
-                    auto numColourComponents = numPixels * 4;
-
-                    // Windows icon data comes as two layers, an XOR mask which contains the bulk
-                    // of the image data and an AND mask which provides the transparency. Annoyingly
-                    // the XOR mask can also contain an alpha channel, in which case the transparency
-                    // mask should not be applied, but there's no way to find out a priori if the XOR
-                    // mask contains an alpha channel.
-
-                    HeapBlock<bool> opacityMask (numPixels);
-                    memset (bitmapImageData, 0, numColourComponents);
-                    ::DrawIconEx (dc, 0, 0, icon, bm.bmWidth, bm.bmHeight, 0, nullptr, DI_MASK);
-
-                    for (int i = 0; i < numPixels; ++i)
-                        opacityMask[i] = (bitmapImageData[i] == 0);
-
-                    Image result = Image (Image::ARGB, bm.bmWidth, bm.bmHeight, true);
-                    Image::BitmapData imageData (result, Image::BitmapData::readWrite);
-
-                    memset (bitmapImageData, 0, numColourComponents);
-                    ::DrawIconEx (dc, 0, 0, icon, bm.bmWidth, bm.bmHeight, 0, nullptr, DI_NORMAL);
-                    memcpy (imageData.data, bitmapImageData, numColourComponents);
-
-                    auto imageHasAlphaChannel = [&imageData, numPixels]()
+                    for (int x = bm.bmWidth; --x >= 0;)
                     {
-                        for (int i = 0; i < numPixels; ++i)
-                            if (imageData.data[i * 4] != 0)
-                                return true;
+                        auto col = GetPixel (dc, x, y);
 
-                        return false;
-                    };
-
-                    if (! imageHasAlphaChannel())
-                        for (int i = 0; i < numPixels; ++i)
-                            imageData.data[i * 4] = opacityMask[i] ? 0xff : 0x00;
-
-                    ::SelectObject (dc, oldObject);
-                    ::DeleteObject(dib);
-                    ::DeleteDC (dc);
-                    ::ReleaseDC (nullptr, tempDC);
-
-                    return result;
+                        imageData.setPixelColour (x, y, Colour ((uint8) GetRValue (col),
+                                                                (uint8) GetGValue (col),
+                                                                (uint8) GetBValue (col)));
+                    }
                 }
 
-                ::DeleteDC (dc);
+                DeleteDC (dc);
             }
-
-            ::ReleaseDC (nullptr, tempDC);
         }
 
-        return {};
+        return im;
+    }
+
+    Image createImageFromHICON (HICON icon)
+    {
+        ICONINFO info;
+
+        if (GetIconInfo (icon, &info))
+        {
+            auto mask  = createImageFromHBITMAP (info.hbmMask);
+            auto image = createImageFromHBITMAP (info.hbmColor);
+
+            if (mask.isValid() && image.isValid())
+            {
+                for (int y = image.getHeight(); --y >= 0;)
+                {
+                    for (int x = image.getWidth(); --x >= 0;)
+                    {
+                        auto brightness = mask.getPixelAt (x, y).getBrightness();
+
+                        if (brightness > 0.0f)
+                            image.multiplyAlphaAt (x, y, 1.0f - brightness);
+                    }
+                }
+
+                return image;
+            }
+        }
+
+        return Image();
     }
 
     HICON createHICONFromImage (const Image& image, const BOOL isIcon, int hotspotX, int hotspotY)
@@ -802,17 +759,12 @@ struct OnScreenKeyboard   : public DeletedAtShutdown,
         startTimer (10);
     }
 
-    JUCE_DECLARE_SINGLETON_SINGLETHREADED (OnScreenKeyboard, true)
+    juce_DeclareSingleton_SingleThreaded (OnScreenKeyboard, true)
 
 private:
     OnScreenKeyboard()
     {
         tipInvocation.CoCreateInstance (ITipInvocation::getCLSID(), CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER);
-    }
-
-    ~OnScreenKeyboard()
-    {
-        clearSingletonInstance();
     }
 
     void timerCallback() override
@@ -855,7 +807,7 @@ private:
     ComSmartPtr<ITipInvocation> tipInvocation;
 };
 
-JUCE_IMPLEMENT_SINGLETON (OnScreenKeyboard)
+juce_ImplementSingleton_SingleThreaded (OnScreenKeyboard)
 
 //==============================================================================
 struct HSTRING_PRIVATE;
@@ -1016,7 +968,6 @@ public:
     ~HWNDComponentPeer()
     {
         shadower = nullptr;
-        currentTouches.deleteAllTouchesForPeer (this);
 
         // do this before the next bit to avoid messages arriving for this window
         // before it's destroyed
@@ -1658,7 +1609,7 @@ private:
 
         LPCTSTR getWindowClassName() const noexcept     { return (LPCTSTR) (pointer_sized_uint) atom; }
 
-        JUCE_DECLARE_SINGLETON_SINGLETHREADED_MINIMAL (WindowClassHolder)
+        juce_DeclareSingleton_SingleThreaded_Minimal (WindowClassHolder)
 
     private:
         ATOM atom;
@@ -1695,7 +1646,9 @@ private:
                 case WM_MOUSEACTIVATE:
                 case WM_NCMOUSEHOVER:
                 case WM_MOUSEHOVER:
+#if ! JUCE_MINGW
                 case WM_TOUCH:
+#endif
                 case WM_POINTERUPDATE:
                 case WM_NCPOINTERUPDATE:
                 case WM_POINTERWHEEL:
@@ -1811,18 +1764,15 @@ private:
 
             RegisterDragDrop (hwnd, dropTarget);
 
+#if ! JUCE_MINGW
             if (canUseMultiTouch())
                 registerTouchWindow (hwnd, 0);
+#endif
 
             setDPIAwareness();
             setMessageFilter();
             updateBorderSize();
             checkForPointerAPI();
-
-            // This is needed so that our plugin window gets notified of WM_SETTINGCHANGE messages
-            // and can respond to display scale changes
-            if (! JUCEApplication::isStandaloneApp())
-                settingChangeCallback = forceDisplayUpdate;
 
             // Calling this function here is (for some reason) necessary to make Windows
             // correctly enable the menu items that we specify in the wm_initmenu message.
@@ -2147,8 +2097,10 @@ private:
 
     bool isTouchEvent() noexcept
     {
+#if ! JUCE_MINGW
         if (registerTouchWindow == nullptr)
             return false;
+#endif
 
         // Relevant info about touch/pen detection flags:
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms703320(v=vs.85).aspx
@@ -2316,6 +2268,7 @@ private:
 
     static MouseInputSource::InputSourceType getPointerType (WPARAM wParam)
     {
+#if ! JUCE_MINGW
         if (getPointerTypeFunction != nullptr)
         {
             POINTER_INPUT_TYPE pointerType;
@@ -2329,6 +2282,7 @@ private:
                     return MouseInputSource::InputSourceType::pen;
             }
         }
+#endif
 
         return MouseInputSource::InputSourceType::mouse;
     }
@@ -2350,6 +2304,7 @@ private:
             peer->handleMouseWheel (getPointerType (wParam), localPos, getMouseEventTime(), wheel);
     }
 
+#if ! JUCE_MINGW
     bool doGestureEvent (LPARAM lParam)
     {
         GESTUREINFO gi;
@@ -2417,7 +2372,7 @@ private:
     {
         auto isCancel = false;
 
-        const auto touchIndex = currentTouches.getIndexOfTouch (this, touch.dwID);
+        const auto touchIndex = currentTouches.getIndexOfTouch (touch.dwID);
         const auto time = getMouseEventTime();
         const auto pos = globalToLocal ({ touch.x / 100.0f, touch.y / 100.0f });
         const auto pressure = touchPressure;
@@ -2526,6 +2481,7 @@ private:
 
         return touchInput;
     }
+#endif
 
     bool handlePenInput (POINTER_PEN_INFO penInfo, Point<float> pos, const float pressure, bool isDown, bool isUp)
     {
@@ -2558,7 +2514,6 @@ private:
         else if (isUp || ! (pInfoFlags & POINTER_FLAG_INCONTACT))
         {
             modsToSend = modsToSend.withoutMouseButtons();
-            currentModifiers = currentModifiers.withoutMouseButtons();
         }
 
         handleMouseEvent (MouseInputSource::InputSourceType::pen, pos, modsToSend, pressure,
@@ -2712,7 +2667,8 @@ private:
     {
         updateKeyModifiers();
 
-        auto textChar = (juce_wchar) key;
+        juce_wchar textChar = (juce_wchar) key;
+
         const int virtualScanCode = (flags >> 16) & 0xff;
 
         if (key >= '0' && key <= '9')
@@ -2971,21 +2927,17 @@ private:
 
     void doSettingChange()
     {
-        forceDisplayUpdate();
+        auto& desktop = Desktop::getInstance();
+
+        const_cast<Desktop::Displays&> (desktop.getDisplays()).refresh();
 
         if (fullScreen && ! isMinimised())
         {
-            auto& display = Desktop::getInstance().getDisplays()
-                           .getDisplayContaining (component.getScreenBounds().getCentre());
+            auto& display = desktop.getDisplays().getDisplayContaining (component.getScreenBounds().getCentre());
 
             setWindowPos (hwnd, display.userArea * display.scale,
                           SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_NOSENDCHANGING);
         }
-    }
-
-    static void forceDisplayUpdate()
-    {
-        const_cast<Desktop::Displays&> (Desktop::getInstance().getDisplays()).refresh();
     }
 
     void handleDPIChange() // happens when a window moves to a screen with a different DPI.
@@ -3065,7 +3017,8 @@ private:
                 return 0;
 
             case WM_NCPAINT:
-                handlePaintMessage(); // this must be done, even with native titlebars, or there are rendering artifacts.
+                if (wParam != 1) // (1 = a repaint of the entire NC region)
+                    handlePaintMessage(); // this must be done, even with native titlebars, or there are rendering artifacts.
 
                 if (hasTitleBar())
                     break; // let the DefWindowProc handle drawing the frame.
@@ -3079,6 +3032,7 @@ private:
 
                 return 1;
 
+#if ! JUCE_MINGW
             //==============================================================================
             case WM_POINTERUPDATE:
                 if (handlePointerInput (wParam, lParam, false, false))
@@ -3094,6 +3048,7 @@ private:
                 if (handlePointerInput (wParam, lParam, false, true))
                     return 0;
                 break;
+#endif
 
             //==============================================================================
             case WM_MOUSEMOVE:          doMouseMove (getPointFromLParam (lParam), false); return 0;
@@ -3124,6 +3079,7 @@ private:
 
                 return 0;
 
+#if ! JUCE_MINGW
             case WM_TOUCH:
                 if (getTouchInputInfo != nullptr)
                     return doTouchEvent ((int) wParam, (HTOUCHINPUT) lParam);
@@ -3135,6 +3091,7 @@ private:
                     return 0;
 
                 break;
+#endif
 
             //==============================================================================
             case WM_SIZING:                return handleSizeConstraining (*(RECT*) lParam, wParam);
@@ -3447,7 +3404,7 @@ private:
                     compositionRange.setLength (0);
 
                     target->setHighlightedRegion (Range<int>::emptyRange (compositionRange.getEnd()));
-                    target->setTemporaryUnderlining ({});
+                    target->setTemporaryUnderlining (Array<Range<int> >());
                 }
 
                 if (auto hImc = ImmGetContext (hWnd))
@@ -3475,7 +3432,7 @@ private:
                                                  Range<int>::emptyRange (-1));
 
                         reset();
-                        target->setTemporaryUnderlining ({});
+                        target->setTemporaryUnderlining (Array<Range<int> >());
                     }
                     else if ((lParam & GCS_COMPSTR) != 0) // (composition is still in-progress)
                     {
@@ -3553,7 +3510,7 @@ private:
                 if (attributeSizeBytes > 0)
                 {
                     // Get attributes (8 bit flag per character):
-                    HeapBlock<char> attributes (attributeSizeBytes);
+                    HeapBlock<char> attributes ((size_t) attributeSizeBytes);
                     ImmGetCompositionString (hImc, GCS_COMPATTR, attributes, (DWORD) attributeSizeBytes);
 
                     selectionStart = 0;
@@ -3650,7 +3607,8 @@ JUCE_API ComponentPeer* createNonRepaintingEmbeddedWindowsPeer (Component& compo
 }
 
 
-JUCE_IMPLEMENT_SINGLETON (HWNDComponentPeer::WindowClassHolder)
+juce_ImplementSingleton_SingleThreaded (HWNDComponentPeer::WindowClassHolder)
+
 
 //==============================================================================
 void ModifierKeys::updateCurrentModifiers() noexcept
@@ -4031,6 +3989,7 @@ static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT r, LPARAM userIn
     const bool isMain = (info.dwFlags & 1 /* MONITORINFOF_PRIMARY */) != 0;
     double dpi = 0;
 
+   #if ! JUCE_DISABLE_WIN32_DPI_AWARENESS
     if (getDPIForMonitor != nullptr)
     {
         UINT dpiX = 0, dpiY = 0;
@@ -4038,6 +3997,7 @@ static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT r, LPARAM userIn
         if (SUCCEEDED (getDPIForMonitor (hm, MDT_Default, &dpiX, &dpiY)))
             dpi = (dpiX + dpiY) / 2.0;
     }
+   #endif
 
     ((Array<MonitorInfo>*) userInfo)->add (MonitorInfo (rectangleFromRECT (*r), isMain, dpi));
 
@@ -4185,7 +4145,7 @@ void* MouseCursor::createStandardMouseCursor (const MouseCursor::StandardCursorT
                       16,0,0,2,52,148,47,0,200,185,16,130,90,12,74,139,107,84,123,39,132,117,151,116,132,146,248,60,209,138,
                       98,22,203,114,34,236,37,52,77,217,247,154,191,119,110,240,193,128,193,95,163,56,60,234,98,135,2,0,59 };
 
-                dragHandCursor = CustomMouseCursorInfo (ImageFileFormat::loadFrom (dragHandData, sizeof (dragHandData)), { 8, 7 }).create();
+                dragHandCursor = CustomMouseCursorInfo (ImageFileFormat::loadFrom (dragHandData, sizeof (dragHandData)), 8, 7).create();
             }
 
             return dragHandCursor;
@@ -4203,7 +4163,7 @@ void* MouseCursor::createStandardMouseCursor (const MouseCursor::StandardCursorT
                   252,114,147,74,83,5,50,68,147,208,217,16,71,149,252,124,5,0,59,0,0 };
                 const int copyCursorSize = 119;
 
-                copyCursor = CustomMouseCursorInfo (ImageFileFormat::loadFrom (copyCursorData, copyCursorSize), { 1, 3 }).create();
+                copyCursor = CustomMouseCursorInfo (ImageFileFormat::loadFrom (copyCursorData, copyCursorSize), 1, 3).create();
             }
 
             return copyCursor;

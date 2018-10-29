@@ -26,10 +26,8 @@ namespace juce
 //==============================================================================
 /**
     Represents an IP address.
-
-    @tags{Core}
 */
-class JUCE_API  IPAddress  final
+class JUCE_API  IPAddress
 {
 public:
     //==============================================================================

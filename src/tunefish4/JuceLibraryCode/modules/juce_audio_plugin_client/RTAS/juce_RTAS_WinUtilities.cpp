@@ -24,13 +24,16 @@
   ==============================================================================
 */
 
-#if JucePlugin_Build_RTAS
+namespace juce
+{
 
 #include "../../juce_core/system/juce_TargetPlatform.h"
 #include "../utility/juce_CheckSettingMacros.h"
 
 // (these functions are in their own file because of problems including windows.h
 // at the same time as the Digi headers)
+
+#if JucePlugin_Build_RTAS
 
 #define _DO_NOT_DECLARE_INTERLOCKED_INTRINSICS_IN_MEMORY // (workaround for a VC build problem)
 
@@ -44,9 +47,6 @@
 #pragma pack (push, 8)
 #include "../utility/juce_IncludeModuleHeaders.h"
 #pragma pack (pop)
-
-namespace juce
-{
 
 //==============================================================================
 void JUCE_CALLTYPE attachSubWindow (void* hostWindow,
@@ -153,7 +153,6 @@ void JUCE_CALLTYPE passFocusToHostWindow (void* hostWindow)
 }
 
 #endif
+#endif
 
 } // namespace juce
-
-#endif

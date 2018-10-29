@@ -31,10 +31,8 @@ namespace juce
     sockets, you could also try the InterprocessConnection class.
 
     @see DatagramSocket, InterprocessConnection, InterprocessConnectionServer
-
-    @tags{Core}
 */
-class JUCE_API  StreamingSocket  final
+class JUCE_API  StreamingSocket
 {
 public:
     //==============================================================================
@@ -177,8 +175,8 @@ public:
 private:
     //==============================================================================
     String hostName;
-    int volatile portNumber = 0, handle = -1;
-    bool connected = false, isListener = false;
+    int volatile portNumber, handle;
+    bool connected, isListener;
     mutable CriticalSection readLock;
 
     StreamingSocket (const String& hostname, int portNumber, int handle);
@@ -195,10 +193,8 @@ private:
     sockets, you could also try the InterprocessConnection class.
 
     @see StreamingSocket, InterprocessConnection, InterprocessConnectionServer
-
-    @tags{Core}
 */
-class JUCE_API  DatagramSocket  final
+class JUCE_API  DatagramSocket
 {
 public:
     //==============================================================================
@@ -319,23 +315,17 @@ public:
     void shutdown();
 
     //==============================================================================
-    /** Join a multicast group.
+    /** Join a multicast group
 
         @returns true if it succeeds.
     */
     bool joinMulticast (const String& multicastIPAddress);
 
-    /** Leave a multicast group.
+    /** Leave a multicast group
 
         @returns true if it succeeds.
     */
     bool leaveMulticast (const String& multicastIPAddress);
-
-    /** Enables or disables multicast loopback.
-
-        @returns true if it succeeds.
-    */
-    bool setMulticastLoopbackEnabled (bool enableLoopback);
 
     //==============================================================================
     /** Allow other applications to re-use the port.
@@ -350,11 +340,11 @@ public:
 
 private:
     //==============================================================================
-    int handle = -1;
-    bool isBound = false;
+    int handle;
+    bool isBound;
     String lastBindAddress, lastServerHost;
-    int lastServerPort = -1;
-    void* lastServerAddress = nullptr;
+    int lastServerPort;
+    void* lastServerAddress;
     mutable CriticalSection readLock;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DatagramSocket)

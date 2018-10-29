@@ -45,8 +45,6 @@ namespace juce
     internally, each one identified by an ID number.
 
     @see HighResolutionTimer, MultiTimer
-
-    @tags{Events}
 */
 class JUCE_API  Timer
 {
@@ -128,10 +126,10 @@ public:
 private:
     class TimerThread;
     friend class TimerThread;
-    size_t positionInQueue = (size_t) -1;
-    int timerPeriodMs = 0;
+    int timerCountdownMs, timerPeriodMs; // NB: these member variable names are a little verbose
+    Timer* previousTimer, *nextTimer;    // to reduce risk of name-clashes with user subclasses
 
-    Timer& operator= (const Timer&) = delete;
+    Timer& operator= (const Timer&) JUCE_DELETED_FUNCTION;
 };
 
 } // namespace juce

@@ -26,7 +26,7 @@
 static File presetsDirectory()
 {
     String folder(JucePlugin_Manufacturer);
-    folder << File::getSeparatorString() << JucePlugin_Name;
+    folder << '/' << JucePlugin_Name;
 
 #if JUCE_MAC
     // /home/<Username>/Library/Audio/Presets/<JucePlugin_Manufacturer>/<JucePlugin_Name>

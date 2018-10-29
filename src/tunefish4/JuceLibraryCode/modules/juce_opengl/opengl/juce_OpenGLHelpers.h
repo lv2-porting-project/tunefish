@@ -30,8 +30,6 @@ namespace juce
 //==============================================================================
 /**
     A set of miscellaneous openGL helper functions.
-
-    @tags{OpenGL}
 */
 class JUCE_API  OpenGLHelpers
 {
@@ -45,7 +43,7 @@ public:
     /** Clears the current context using the given colour. */
     static void clear (Colour colour);
 
-    static void enableScissorTest (Rectangle<int> clip);
+    static void enableScissorTest (const Rectangle<int>& clip);
 
     /** Checks whether the current context supports the specified extension. */
     static bool isExtensionSupported (const char* extensionName);

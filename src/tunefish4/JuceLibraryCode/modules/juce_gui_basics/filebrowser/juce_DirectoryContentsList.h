@@ -36,8 +36,6 @@ namespace juce
     to tell any listeners.
 
     @see FileListComponent, FileBrowserComponent
-
-    @tags{GUI}
 */
 class JUCE_API  DirectoryContentsList   : public ChangeBroadcaster,
                                           private TimeSliceClient

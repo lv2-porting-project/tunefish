@@ -44,7 +44,7 @@ CameraDevice::CameraDevice (const String& nm, int index, int minWidth, int minHe
 CameraDevice::~CameraDevice()
 {
     stopRecording();
-    pimpl.reset();
+    pimpl = nullptr;
 }
 
 Component* CameraDevice::createViewerComponent()

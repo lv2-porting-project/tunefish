@@ -46,8 +46,6 @@ namespace juce
     to choose the style of resizing to use.
 
     @see TopLevelWindow
-
-    @tags{GUI}
 */
 class JUCE_API  ResizableWindow  : public TopLevelWindow
 {
@@ -384,7 +382,7 @@ protected:
 
 private:
     //==============================================================================
-    Component::SafePointer<Component> contentComponent, splashScreen;
+    Component::SafePointer<Component> contentComponent;
     bool ownsContentComponent = false, resizeToFitContent = false, fullscreen = false, canDrag = true, dragStarted = false;
     ComponentDragger dragger;
     Rectangle<int> lastNonFullScreenPos;

@@ -62,7 +62,7 @@ static const EmptyString emptyString = { 0x3fffffff, sizeof (String::CharPointer
 class StringHolder
 {
 public:
-    StringHolder() = delete;
+    StringHolder() JUCE_DELETED_FUNCTION;
 
     typedef String::CharPointerType CharPointerType;
     typedef String::CharPointerType::CharType CharType;
@@ -448,7 +448,7 @@ namespace NumberToStringConverters
         return printDigits (t, v);
     }
 
-    struct StackArrayStream  : public std::basic_streambuf<char, std::char_traits<char>>
+    struct StackArrayStream  : public std::basic_streambuf<char, std::char_traits<char> >
     {
         explicit StackArrayStream (char* d)
         {
@@ -463,10 +463,7 @@ namespace NumberToStringConverters
                 std::ostream o (this);
 
                 if (numDecPlaces > 0)
-                {
-                    o.setf (std::ios_base::fixed);
                     o.precision ((std::streamsize) numDecPlaces);
-                }
 
                 o << n;
             }
@@ -481,7 +478,7 @@ namespace NumberToStringConverters
         {
             auto* end = buffer + numChars;
             auto* t = end;
-            auto v = (int64) (std::pow (10.0, numDecPlaces) * std::abs (n) + 0.5);
+            auto v = (int64) (pow (10.0, numDecPlaces) * std::abs (n) + 0.5);
             *--t = (char) 0;
 
             while (numDecPlaces >= 0 || v > 0)
@@ -681,12 +678,7 @@ static int naturalStringCompare (String::CharPointerType s1, String::CharPointer
         const bool hasSpace2 = s2.isWhitespace();
 
         if ((! firstLoop) && (hasSpace1 ^ hasSpace2))
-        {
-            if (s1.isEmpty())  return -1;
-            if (s2.isEmpty())  return 1;
-
             return hasSpace2 ? 1 : -1;
-        }
 
         firstLoop = false;
 
@@ -695,8 +687,8 @@ static int naturalStringCompare (String::CharPointerType s1, String::CharPointer
 
         if (s1.isDigit() && s2.isDigit())
         {
-            auto result = (*s1 == '0' || *s2 == '0') ? stringCompareLeft  (s1, s2)
-                                                     : stringCompareRight (s1, s2);
+            const int result = (*s1 == '0' || *s2 == '0') ? stringCompareLeft  (s1, s2)
+                                                          : stringCompareRight (s1, s2);
 
             if (result != 0)
                 return result;
@@ -753,8 +745,8 @@ void String::appendCharPointer (const CharPointerType startOfTextToAppend,
 {
     jassert (startOfTextToAppend.getAddress() != nullptr && endOfTextToAppend.getAddress() != nullptr);
 
-    auto extraBytesNeeded = getAddressDifference (endOfTextToAppend.getAddress(),
-                                                  startOfTextToAppend.getAddress());
+    const int extraBytesNeeded = getAddressDifference (endOfTextToAppend.getAddress(),
+                                                       startOfTextToAppend.getAddress());
     jassert (extraBytesNeeded >= 0);
 
     if (extraBytesNeeded > 0)
@@ -872,6 +864,7 @@ JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, StringRef s2)            
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, uint8 number)                { return s1 += (int) number; }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const short number)          { return s1 += (int) number; }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const int number)            { return s1 += number; }
+JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const unsigned short number) { return s1 += (uint64) number; }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const long number)           { return s1 += String (number); }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const unsigned long number)  { return s1 += String (number); }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const int64 number)          { return s1 += String (number); }
@@ -886,7 +879,7 @@ JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const Str
 
 JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, StringRef text)
 {
-    auto numBytes = CharPointer_UTF8::getBytesRequiredFor (text.text);
+    const size_t numBytes = CharPointer_UTF8::getBytesRequiredFor (text.text);
 
    #if (JUCE_STRING_UTF_TYPE == 8)
     stream.write (text.text.getAddress(), numBytes);
@@ -1367,6 +1360,8 @@ struct StringCreationHelper
         dest.write (c);
     }
 
+    String&& get() noexcept     { return static_cast<String&&> (result); }
+
     String result;
     String::CharPointerType source { nullptr }, dest { nullptr };
     size_t allocatedBytes, bytesWritten = 0;
@@ -1392,7 +1387,7 @@ String String::replaceCharacter (const juce_wchar charToReplace, const juce_wcha
             break;
     }
 
-    return static_cast<String&&> (builder.result);
+    return builder.get();
 }
 
 String String::replaceCharacters (StringRef charactersToReplace, StringRef charactersToInsertInstead) const
@@ -1417,7 +1412,7 @@ String String::replaceCharacters (StringRef charactersToReplace, StringRef chara
             break;
     }
 
-    return static_cast<String&&> (builder.result);
+    return builder.get();
 }
 
 //==============================================================================
@@ -1499,7 +1494,7 @@ String String::toUpperCase() const
         ++(builder.source);
     }
 
-    return static_cast<String&&> (builder.result);
+    return builder.get();
 }
 
 String String::toLowerCase() const
@@ -1517,7 +1512,7 @@ String String::toLowerCase() const
         ++(builder.source);
     }
 
-    return static_cast<String&&> (builder.result);
+    return builder.get();
 }
 
 //==============================================================================
@@ -1782,7 +1777,7 @@ String String::retainCharacters (StringRef charactersToRetain) const
     }
 
     builder.write (0);
-    return static_cast<String&&> (builder.result);
+    return builder.get();
 }
 
 String String::removeCharacters (StringRef charactersToRemove) const
@@ -1803,7 +1798,7 @@ String String::removeCharacters (StringRef charactersToRemove) const
             break;
     }
 
-    return static_cast<String&&> (builder.result);
+    return builder.get();
 }
 
 String String::initialSectionContainingOnly (StringRef permittedCharacters) const
@@ -2019,7 +2014,7 @@ String String::createStringFromData (const void* const unknownData, int size)
         }
 
         builder.write (0);
-        return static_cast<String&&> (builder.result);
+        return builder.get();
     }
 
     auto* start = (const char*) data;
@@ -2384,6 +2379,25 @@ public:
                 numStr << std::numeric_limits<int16>::min();
                 expect (numStr == "-32768");
             }
+            // uint16
+            {
+                String numStr (std::numeric_limits<uint16>::max());
+                expect (numStr == "65535");
+            }
+            {
+                String numStr (std::numeric_limits<uint16>::min());
+                expect (numStr == "0");
+            }
+            {
+                String numStr;
+                numStr << std::numeric_limits<uint16>::max();
+                expect (numStr == "65535");
+            }
+            {
+                String numStr;
+                numStr << std::numeric_limits<uint16>::min();
+                expect (numStr == "0");
+            }
             // int32
             {
                 String numStr (std::numeric_limits<int32>::max());
@@ -2489,8 +2503,6 @@ public:
             expect (String::toHexString (data, 8, 0).equalsIgnoreCase ("010203040a0b0c0d"));
             expect (String::toHexString (data, 8, 1).equalsIgnoreCase ("01 02 03 04 0a 0b 0c 0d"));
             expect (String::toHexString (data, 8, 2).equalsIgnoreCase ("0102 0304 0a0b 0c0d"));
-
-            expectEquals (String (2589410.5894, 7), String ("2589410.5894000"));
 
             beginTest ("Subsections");
             String s3;

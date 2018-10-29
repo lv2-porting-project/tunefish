@@ -28,8 +28,6 @@ namespace juce
     Acts as a critical section which processes can use to block each other.
 
     @see CriticalSection
-
-    @tags{Core}
 */
 class JUCE_API  InterProcessLock
 {

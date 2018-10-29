@@ -47,9 +47,7 @@ namespace juce
     what the target playback rate is. This value is passed on to the voices so that
     they can pitch their output correctly.
 
-    @see MPESynthesiserBase, MPESynthesiserVoice, MPENote, MPEInstrument
-
-    @tags{Audio}
+    @see MPESynthesiserBase, MPESythesiserVoice, MPENote, MPEInstrument
 */
 class JUCE_API  MPESynthesiser   : public MPESynthesiserBase
 {
@@ -299,11 +297,11 @@ protected:
 
     //==============================================================================
     OwnedArray<MPESynthesiserVoice> voices;
-    CriticalSection voicesLock;
 
 private:
     //==============================================================================
-    bool shouldStealVoices = false;
+    bool shouldStealVoices;
+    CriticalSection voicesLock;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MPESynthesiser)
 };

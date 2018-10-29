@@ -59,17 +59,17 @@ public:
         endSpeed = jmax (0.0, endSpd * invTotalDistance);
 
         if (useProxyComponent)
-            proxy.reset (new ProxyComponent (*component));
+            proxy = new ProxyComponent (*component);
         else
-            proxy.reset();
+            proxy = nullptr;
 
         component->setVisible (! useProxyComponent);
     }
 
     bool useTimeslice (const int elapsed)
     {
-        if (auto* c = proxy != nullptr ? proxy.get()
-                                       : component.get())
+        if (auto* c = proxy != nullptr ? static_cast<Component*> (proxy)
+                                       : static_cast<Component*> (component))
         {
             msElapsed += elapsed;
             double newProgress = msElapsed / (double) msTotal;

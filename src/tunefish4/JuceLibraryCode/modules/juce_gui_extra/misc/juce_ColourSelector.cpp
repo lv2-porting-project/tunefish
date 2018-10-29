@@ -73,7 +73,7 @@ public:
 class ColourSelector::ColourSpaceView  : public Component
 {
 public:
-    ColourSpaceView (ColourSelector& cs, float& hue, float& sat, float& val, int edgeSize)
+    ColourSpaceView (ColourSelector& cs, float& hue, float& sat, float& val, const int edgeSize)
         : owner (cs), h (hue), s (sat), v (val), lastHue (0.0f), edge (edgeSize)
     {
         addAndMakeVisible (marker);
@@ -84,19 +84,19 @@ public:
     {
         if (colours.isNull())
         {
-            auto width = getWidth() / 2;
-            auto height = getHeight() / 2;
+            const int width = getWidth() / 2;
+            const int height = getHeight() / 2;
             colours = Image (Image::RGB, width, height, false);
 
             Image::BitmapData pixels (colours, Image::BitmapData::writeOnly);
 
             for (int y = 0; y < height; ++y)
             {
-                auto val = 1.0f - y / (float) height;
+                const float val = 1.0f - y / (float) height;
 
                 for (int x = 0; x < width; ++x)
                 {
-                    auto sat = x / (float) width;
+                    const float sat = x / (float) width;
                     pixels.setPixelColour (x, y, Colour (h, sat, val, 1.0f));
                 }
             }
@@ -117,8 +117,8 @@ public:
 
     void mouseDrag (const MouseEvent& e) override
     {
-        auto sat =        (e.x - edge) / (float) (getWidth()  - edge * 2);
-        auto val = 1.0f - (e.y - edge) / (float) (getHeight() - edge * 2);
+        const float sat = (e.x - edge) / (float) (getWidth() - edge * 2);
+        const float val = 1.0f - (e.y - edge) / (float) (getHeight() - edge * 2);
 
         owner.setSV (sat, val);
     }
@@ -172,8 +172,8 @@ public:
 
     void paint (Graphics& g) override
     {
-        auto cw = (float) getWidth();
-        auto ch = (float) getHeight();
+        const float cw = (float) getWidth();
+        const float ch = (float) getHeight();
 
         Path p;
         p.addTriangle (1.0f, 1.0f,
@@ -199,7 +199,7 @@ private:
 class ColourSelector::HueSelectorComp  : public Component
 {
 public:
-    HueSelectorComp (ColourSelector& cs, float& hue, int edgeSize)
+    HueSelectorComp (ColourSelector& cs, float& hue, const int edgeSize)
         : owner (cs), h (hue), edge (edgeSize)
     {
         addAndMakeVisible (marker);
@@ -259,11 +259,11 @@ public:
 
     void paint (Graphics& g) override
     {
-        auto col = owner.getSwatchColour (index);
+        const Colour c (owner.getSwatchColour (index));
 
-        g.fillCheckerBoard (getLocalBounds().toFloat(), 6.0f, 6.0f,
-                            Colour (0xffdddddd).overlaidWith (col),
-                            Colour (0xffffffff).overlaidWith (col));
+        g.fillCheckerBoard (getLocalBounds(), 6, 6,
+                            Colour (0xffdddddd).overlaidWith (c),
+                            Colour (0xffffffff).overlaidWith (c));
     }
 
     void mouseDown (const MouseEvent&) override
@@ -310,7 +310,7 @@ private:
 };
 
 //==============================================================================
-ColourSelector::ColourSelector (int sectionsToShow, int edge, int gapAroundColourSpaceComponent)
+ColourSelector::ColourSelector (const int sectionsToShow, const int edge, const int gapAroundColourSpaceComponent)
     : colour (Colours::white),
       flags (sectionsToShow),
       edgeGap (edge)
@@ -322,29 +322,21 @@ ColourSelector::ColourSelector (int sectionsToShow, int edge, int gapAroundColou
 
     if ((flags & showSliders) != 0)
     {
-        sliders[0].reset (new ColourComponentSlider (TRANS ("red")));
-        sliders[1].reset (new ColourComponentSlider (TRANS ("green")));
-        sliders[2].reset (new ColourComponentSlider (TRANS ("blue")));
-        sliders[3].reset (new ColourComponentSlider (TRANS ("alpha")));
-
-        addAndMakeVisible (sliders[0].get());
-        addAndMakeVisible (sliders[1].get());
-        addAndMakeVisible (sliders[2].get());
-        addChildComponent (sliders[3].get());
+        addAndMakeVisible (sliders[0] = new ColourComponentSlider (TRANS ("red")));
+        addAndMakeVisible (sliders[1] = new ColourComponentSlider (TRANS ("green")));
+        addAndMakeVisible (sliders[2] = new ColourComponentSlider (TRANS ("blue")));
+        addChildComponent (sliders[3] = new ColourComponentSlider (TRANS ("alpha")));
 
         sliders[3]->setVisible ((flags & showAlphaChannel) != 0);
 
         for (int i = 4; --i >= 0;)
-            sliders[i]->onValueChange = [this] { changeColour(); };
+            sliders[i]->addListener (this);
     }
 
     if ((flags & showColourspace) != 0)
     {
-        colourSpace.reset (new ColourSpaceView (*this, h, s, v, gapAroundColourSpaceComponent));
-        hueSelector.reset (new HueSelectorComp (*this, h,  gapAroundColourSpaceComponent));
-
-        addAndMakeVisible (colourSpace.get());
-        addAndMakeVisible (hueSelector.get());
+        addAndMakeVisible (colourSpace = new ColourSpaceView (*this, h, s, v, gapAroundColourSpaceComponent));
+        addAndMakeVisible (hueSelector = new HueSelectorComp (*this, h,  gapAroundColourSpaceComponent));
     }
 
     update (dontSendNotification);
@@ -438,9 +430,9 @@ void ColourSelector::paint (Graphics& g)
 
     if ((flags & showColourAtTop) != 0)
     {
-        auto currentColour = getCurrentColour();
+        const Colour currentColour (getCurrentColour());
 
-        g.fillCheckerBoard (previewArea.toFloat(), 10.0f, 10.0f,
+        g.fillCheckerBoard (previewArea, 10, 10,
                             Colour (0xffdddddd).overlaidWith (currentColour),
                             Colour (0xffffffff).overlaidWith (currentColour));
 
@@ -499,7 +491,7 @@ void ColourSelector::resized()
 
     if ((flags & showSliders) != 0)
     {
-        auto sliderHeight = jmax (4, sliderSpace / numSliders);
+        const int sliderHeight = jmax (4, sliderSpace / numSliders);
 
         for (int i = 0; i < numSliders; ++i)
         {
@@ -554,7 +546,7 @@ void ColourSelector::resized()
     }
 }
 
-void ColourSelector::changeColour()
+void ColourSelector::sliderValueChanged (Slider*)
 {
     if (sliders[0] != nullptr)
         setCurrentColour (Colour ((uint8) sliders[0]->getValue(),
@@ -569,7 +561,7 @@ int ColourSelector::getNumSwatches() const
     return 0;
 }
 
-Colour ColourSelector::getSwatchColour (int) const
+Colour ColourSelector::getSwatchColour (const int) const
 {
     jassertfalse; // if you've overridden getNumSwatches(), you also need to implement this method
     return Colours::black;

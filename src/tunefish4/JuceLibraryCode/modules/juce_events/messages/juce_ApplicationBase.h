@@ -78,8 +78,6 @@ namespace juce
     @endcode
 
     @see JUCEApplication, START_JUCE_APPLICATION
-
-    @tags{Events}
 */
 class JUCE_API  JUCEApplicationBase
 {
@@ -190,21 +188,12 @@ public:
                                      const String& sourceFilename,
                                      int lineNumber) = 0;
 
-    /** Called by the operating system to indicate that you should reduce your memory
-        footprint.
-
-        You should override this method to free up some memory gracefully, if possible,
-        otherwise the host may forcibly kill your app.
-
-        At the moment this method is only called on iOS.
-    */
-    virtual void memoryWarningReceived()     { jassertfalse; }
-
     //==============================================================================
     /** Override this method to be informed when the back button is pressed on a device.
+
         This is currently only implemented on Android devices.
      */
-    virtual void backButtonPressed() {}
+    virtual void backButtonPressed() { }
 
     //==============================================================================
     /** Signals that the main message loop should stop and the application should terminate.
@@ -286,8 +275,8 @@ public:
 private:
     //==============================================================================
     static JUCEApplicationBase* appInstance;
-    int appReturnValue = 0;
-    bool stillInitialising = true;
+    int appReturnValue;
+    bool stillInitialising;
 
     struct MultipleInstanceHandler;
     friend struct MultipleInstanceHandler;

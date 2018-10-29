@@ -38,7 +38,7 @@ void AudioIODeviceType::removeListener (Listener* l)   { listeners.remove (l); }
 
 void AudioIODeviceType::callDeviceChangeListeners()
 {
-    listeners.call ([] (Listener& l) { l.audioDeviceListChanged(); });
+    listeners.call (&AudioIODeviceType::Listener::audioDeviceListChanged);
 }
 
 //==============================================================================
@@ -76,10 +76,6 @@ AudioIODeviceType* AudioIODeviceType::createAudioIODeviceType_Android()         
 
 #if ! (JUCE_ANDROID && JUCE_USE_ANDROID_OPENSLES)
 AudioIODeviceType* AudioIODeviceType::createAudioIODeviceType_OpenSLES()        { return nullptr; }
-#endif
-
-#if ! (JUCE_ANDROID && JUCE_USE_ANDROID_OBOE)
-AudioIODeviceType* AudioIODeviceType::createAudioIODeviceType_Oboe()            { return nullptr; }
 #endif
 
 } // namespace juce

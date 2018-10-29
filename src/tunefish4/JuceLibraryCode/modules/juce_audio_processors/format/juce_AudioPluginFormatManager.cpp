@@ -32,8 +32,8 @@ namespace PluginFormatManagerHelpers
     struct ErrorCallbackOnMessageThread : public CallbackMessage
     {
         ErrorCallbackOnMessageThread (const String& inError,
-                                      AudioPluginFormat::InstantiationCompletionCallback* c)
-            : error (inError), callback (c)
+                                      AudioPluginFormat::InstantiationCompletionCallback* inCallback)
+            : error (inError), callback (inCallback)
         {
         }
 
@@ -66,24 +66,22 @@ void AudioPluginFormatManager::addDefaultFormats()
 {
    #if JUCE_DEBUG
     // you should only call this method once!
-    for (auto* format : formats)
+    for (int i = formats.size(); --i >= 0;)
     {
-        ignoreUnused (format);
-
        #if JUCE_PLUGINHOST_VST && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX || JUCE_IOS)
-        jassert (dynamic_cast<VSTPluginFormat*> (format) == nullptr);
+        jassert (dynamic_cast<VSTPluginFormat*> (formats[i]) == nullptr);
        #endif
 
        #if JUCE_PLUGINHOST_VST3 && (JUCE_MAC || JUCE_WINDOWS)
-        jassert (dynamic_cast<VST3PluginFormat*> (format) == nullptr);
+        jassert (dynamic_cast<VST3PluginFormat*> (formats[i]) == nullptr);
        #endif
 
        #if JUCE_PLUGINHOST_AU && (JUCE_MAC || JUCE_IOS)
-        jassert (dynamic_cast<AudioUnitPluginFormat*> (format) == nullptr);
+        jassert (dynamic_cast<AudioUnitPluginFormat*> (formats[i]) == nullptr);
        #endif
 
        #if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
-        jassert (dynamic_cast<LADSPAPluginFormat*> (format) == nullptr);
+        jassert (dynamic_cast<LADSPAPluginFormat*> (formats[i]) == nullptr);
        #endif
     }
    #endif
@@ -110,12 +108,12 @@ int AudioPluginFormatManager::getNumFormats()
     return formats.size();
 }
 
-AudioPluginFormat* AudioPluginFormatManager::getFormat (int index)
+AudioPluginFormat* AudioPluginFormatManager::getFormat (const int index)
 {
-    return formats[index];
+    return formats [index];
 }
 
-void AudioPluginFormatManager::addFormat (AudioPluginFormat* format)
+void AudioPluginFormatManager::addFormat (AudioPluginFormat* const format)
 {
     formats.add (format);
 }
@@ -123,7 +121,7 @@ void AudioPluginFormatManager::addFormat (AudioPluginFormat* format)
 AudioPluginInstance* AudioPluginFormatManager::createPluginInstance (const PluginDescription& description, double rate,
                                                                      int blockSize, String& errorMessage) const
 {
-    if (auto* format = findFormatForDescription (description, errorMessage))
+    if (AudioPluginFormat* format = findFormatForDescription (description, errorMessage))
         return format->createInstanceFromDescription (description, rate, blockSize, errorMessage);
 
     return nullptr;
@@ -136,7 +134,7 @@ void AudioPluginFormatManager::createPluginInstanceAsync (const PluginDescriptio
 {
     String error;
 
-    if (auto* format = findFormatForDescription (description, error))
+    if (AudioPluginFormat* format = findFormatForDescription (description, error))
         return format->createPluginInstanceAsync (description, initialSampleRate, initialBufferSize, callback);
 
     (new PluginFormatManagerHelpers::ErrorCallbackOnMessageThread (error, callback))->post();
@@ -149,21 +147,24 @@ void AudioPluginFormatManager::createPluginInstanceAsync (const PluginDescriptio
 {
     String error;
 
-    if (auto* format = findFormatForDescription (description, error))
+    if (AudioPluginFormat* format = findFormatForDescription (description, error))
         return format->createPluginInstanceAsync (description, initialSampleRate, initialBufferSize, f);
 
     (new PluginFormatManagerHelpers::ErrorLambdaOnMessageThread (error, f))->post();
 }
 
-AudioPluginFormat* AudioPluginFormatManager::findFormatForDescription (const PluginDescription& description,
-                                                                       String& errorMessage) const
+AudioPluginFormat* AudioPluginFormatManager::findFormatForDescription (const PluginDescription& description, String& errorMessage) const
 {
-    errorMessage = {};
+    errorMessage = String();
 
-    for (auto* format : formats)
-        if (format->getName() == description.pluginFormatName
-              && format->fileMightContainThisPluginType (description.fileOrIdentifier))
+    for (int i = 0; i < formats.size(); ++i)
+    {
+        AudioPluginFormat* format;
+
+        if ((format = formats.getUnchecked (i))->getName() == description.pluginFormatName
+               && format->fileMightContainThisPluginType (description.fileOrIdentifier))
             return format;
+    }
 
     errorMessage = NEEDS_TRANS ("No compatible plug-in format exists for this plug-in");
 
@@ -172,9 +173,9 @@ AudioPluginFormat* AudioPluginFormatManager::findFormatForDescription (const Plu
 
 bool AudioPluginFormatManager::doesPluginStillExist (const PluginDescription& description) const
 {
-    for (auto* format : formats)
-        if (format->getName() == description.pluginFormatName)
-            return format->doesPluginStillExist (description);
+    for (int i = 0; i < formats.size(); ++i)
+        if (formats.getUnchecked(i)->getName() == description.pluginFormatName)
+            return formats.getUnchecked(i)->doesPluginStillExist (description);
 
     return false;
 }

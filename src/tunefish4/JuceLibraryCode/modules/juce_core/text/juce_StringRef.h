@@ -55,16 +55,14 @@ namespace juce
     argument to already be a String.
 
     @see String
-
-    @tags{Core}
 */
-class JUCE_API  StringRef  final
+class JUCE_API  StringRef
 {
 public:
     /** Creates a StringRef from a raw string literal.
         The StringRef object does NOT take ownership or copy this data, so you must
         ensure that the data does not change during the lifetime of the StringRef.
-        Note that this pointer cannot be null!
+        Note that this pointer not be null!
     */
     StringRef (const char* stringLiteral) noexcept;
 

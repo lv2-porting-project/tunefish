@@ -38,8 +38,6 @@ class AudioProcessorEditorListener;
     by overriding the AudioProcessor::createEditor() method.
 
     @see AudioProcessor, GenericAudioProcessorEditor
-
-    @tags{Audio}
 */
 class JUCE_API  AudioProcessorEditor  : public Component
 {
@@ -204,7 +202,6 @@ private:
     bool resizable;
     ComponentBoundsConstrainer defaultConstrainer;
     ComponentBoundsConstrainer* constrainer = {};
-    Component::SafePointer<Component> splashScreen;
 
     JUCE_DECLARE_NON_COPYABLE (AudioProcessorEditor)
 };

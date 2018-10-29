@@ -115,7 +115,7 @@ bool KnownPluginList::isListingUpToDate (const String& fileOrIdentifier,
 
 void KnownPluginList::setCustomScanner (CustomScanner* newScanner)
 {
-    scanner.reset (newScanner);
+    scanner = newScanner;
 }
 
 bool KnownPluginList::scanAndAddFile (const String& fileOrIdentifier,
@@ -204,8 +204,13 @@ void KnownPluginList::scanAndAddDragAndDroppedFiles (AudioPluginFormatManager& f
             {
                 StringArray s;
 
-                for (auto& subFile : f.findChildFiles (File::findFilesAndDirectories, false))
-                    s.add (subFile.getFullPathName());
+                {
+                    Array<File> subFiles;
+                    f.findChildFiles (subFiles, File::findFilesAndDirectories, false);
+
+                    for (auto& subFile : subFiles)
+                        s.add (subFile.getFullPathName());
+                }
 
                 scanAndAddDragAndDroppedFiles (formatManager, s, typesFound);
             }
@@ -261,14 +266,15 @@ struct PluginSorter
     PluginSorter (KnownPluginList::SortMethod sortMethod, bool forwards) noexcept
         : method (sortMethod), direction (forwards ? 1 : -1) {}
 
-    bool operator() (const PluginDescription* first, const PluginDescription* second) const
+    int compareElements (const PluginDescription* const first,
+                         const PluginDescription* const second) const
     {
         int diff = 0;
 
         switch (method)
         {
-            case KnownPluginList::sortByCategory:           diff = first->category.compareNatural (second->category, false); break;
-            case KnownPluginList::sortByManufacturer:       diff = first->manufacturerName.compareNatural (second->manufacturerName, false); break;
+            case KnownPluginList::sortByCategory:           diff = first->category.compareNatural (second->category, true); break;
+            case KnownPluginList::sortByManufacturer:       diff = first->manufacturerName.compareNatural (second->manufacturerName, true); break;
             case KnownPluginList::sortByFormat:             diff = first->pluginFormatName.compare (second->pluginFormatName); break;
             case KnownPluginList::sortByFileSystemLocation: diff = lastPathPart (first->fileOrIdentifier).compare (lastPathPart (second->fileOrIdentifier)); break;
             case KnownPluginList::sortByInfoUpdateTime:     diff = compare (first->lastInfoUpdateTime, second->lastInfoUpdateTime); break;
@@ -276,9 +282,9 @@ struct PluginSorter
         }
 
         if (diff == 0)
-            diff = first->name.compareNatural (second->name, false);
+            diff = first->name.compareNatural (second->name, true);
 
-        return diff * direction < 0;
+        return diff * direction;
     }
 
 private:
@@ -295,8 +301,10 @@ private:
         return 0;
     }
 
-    KnownPluginList::SortMethod method;
-    int direction;
+    const KnownPluginList::SortMethod method;
+    const int direction;
+
+    JUCE_DECLARE_NON_COPYABLE (PluginSorter)
 };
 
 void KnownPluginList::sort (const SortMethod method, bool forwards)
@@ -309,7 +317,10 @@ void KnownPluginList::sort (const SortMethod method, bool forwards)
             ScopedLock lock (typesArrayLock);
 
             oldOrder.addArray (types);
-            std::stable_sort (types.begin(), types.end(), PluginSorter (method, forwards));
+
+            PluginSorter sorter (method, forwards);
+            types.sort (sorter, true);
+
             newOrder.addArray (types);
         }
 
@@ -420,7 +431,7 @@ struct PluginTreeUtils
                 {
                     current->folder = lastType;
                     tree.subFolders.add (current.release());
-                    current.reset (new KnownPluginList::PluginTree());
+                    current = new KnownPluginList::PluginTree();
                 }
 
                 lastType = thisType;
@@ -520,10 +531,11 @@ KnownPluginList::PluginTree* KnownPluginList::createTree (const SortMethod sortM
 
     {
         ScopedLock lock (typesArrayLock);
-        sorted.addArray (types);
-    }
+        PluginSorter sorter (sortMethod, true);
 
-    std::stable_sort (sorted.begin(), sorted.end(), PluginSorter (sortMethod, true));
+        for (auto* t : types)
+            sorted.addSorted (sorter, t);
+    }
 
     auto* tree = new PluginTree();
 

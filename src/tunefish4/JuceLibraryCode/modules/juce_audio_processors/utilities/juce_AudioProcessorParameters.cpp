@@ -45,39 +45,30 @@ AudioProcessorParameter::Category AudioProcessorParameterWithID::getCategory() c
 //==============================================================================
 AudioParameterFloat::AudioParameterFloat (const String& idToUse, const String& nameToUse,
                                           NormalisableRange<float> r, float def,
-                                          const String& labelToUse, Category categoryToUse,
-                                          std::function<String (float, int)> stringFromValue,
-                                          std::function<float (const String&)> valueFromString)
+                                          const String& labelToUse, Category categoryToUse)
    : AudioProcessorParameterWithID (idToUse, nameToUse, labelToUse, categoryToUse),
-     range (r), value (def), defaultValue (def),
-     stringFromValueFunction (stringFromValue),
-     valueFromStringFunction (valueFromString)
+     range (r), value (def), defaultValue (def)
 {
-    if (stringFromValueFunction == nullptr)
-        stringFromValueFunction = [] (float v, int length)
-        {
-            String asText (v, 2);
-            return length > 0 ? asText.substring (0, length) : asText;
-        };
-
-    if (valueFromStringFunction == nullptr)
-        valueFromStringFunction = [] (const String& text) { return text.getFloatValue(); };
 }
 
 AudioParameterFloat::AudioParameterFloat (String pid, String nm, float minValue, float maxValue, float def)
-   : AudioParameterFloat (pid, nm, { minValue, maxValue }, def)
+   : AudioProcessorParameterWithID (pid, nm), range (minValue, maxValue), value (def), defaultValue (def)
 {
 }
 
 AudioParameterFloat::~AudioParameterFloat() {}
 
 float AudioParameterFloat::getValue() const                              { return range.convertTo0to1 (value); }
-void AudioParameterFloat::setValue (float newValue)                      { value = range.convertFrom0to1 (newValue); valueChanged (get()); }
+void AudioParameterFloat::setValue (float newValue)                      { value = range.convertFrom0to1 (newValue); }
 float AudioParameterFloat::getDefaultValue() const                       { return range.convertTo0to1 (defaultValue); }
 int AudioParameterFloat::getNumSteps() const                             { return AudioProcessorParameterWithID::getNumSteps(); }
-String AudioParameterFloat::getText (float v, int length) const          { return stringFromValueFunction (range.convertFrom0to1 (v), length); }
-float AudioParameterFloat::getValueForText (const String& text) const    { return range.convertTo0to1 (valueFromStringFunction (text)); }
-void AudioParameterFloat::valueChanged (float)                           {}
+float AudioParameterFloat::getValueForText (const String& text) const    { return range.convertTo0to1 (text.getFloatValue()); }
+
+String AudioParameterFloat::getText (float v, int length) const
+{
+    String asText (range.convertFrom0to1 (v), 2);
+    return length > 0 ? asText.substring (0, length) : asText;
+}
 
 AudioParameterFloat& AudioParameterFloat::operator= (float newValue)
 {
@@ -90,38 +81,27 @@ AudioParameterFloat& AudioParameterFloat::operator= (float newValue)
 //==============================================================================
 AudioParameterInt::AudioParameterInt (const String& idToUse, const String& nameToUse,
                                       int mn, int mx, int def,
-                                      const String& labelToUse,
-                                      std::function<String (int, int)> stringFromInt,
-                                      std::function<int (const String&)> intFromString)
+                                      const String& labelToUse)
    : AudioProcessorParameterWithID (idToUse, nameToUse, labelToUse),
-     minValue (mn), maxValue (mx), rangeOfValues (maxValue - minValue),
+     minValue (mn), maxValue (mx),
      value ((float) def),
-     defaultValue (convertTo0to1 (def)),
-     stringFromIntFunction (stringFromInt),
-     intFromStringFunction (intFromString)
+     defaultValue (convertTo0to1 (def))
 {
     jassert (minValue < maxValue); // must have a non-zero range of values!
-
-    if (stringFromIntFunction == nullptr)
-        stringFromIntFunction = [] (int v, int) { return String (v); };
-
-    if (intFromStringFunction == nullptr)
-        intFromStringFunction = [] (const String& text) { return text.getIntValue(); };
 }
 
 AudioParameterInt::~AudioParameterInt() {}
 
 int AudioParameterInt::limitRange (int v) const noexcept                 { return jlimit (minValue, maxValue, v); }
-float AudioParameterInt::convertTo0to1 (int v) const noexcept            { return (limitRange (v) - minValue) / (float) rangeOfValues; }
-int AudioParameterInt::convertFrom0to1 (float v) const noexcept          { return limitRange (roundToInt ((v * (float) rangeOfValues) + minValue)); }
+float AudioParameterInt::convertTo0to1 (int v) const noexcept            { return (limitRange (v) - minValue) / (float) (maxValue - minValue); }
+int AudioParameterInt::convertFrom0to1 (float v) const noexcept          { return limitRange (roundToInt ((v * (float) (maxValue - minValue)) + minValue)); }
 
 float AudioParameterInt::getValue() const                                { return convertTo0to1 (roundToInt (value)); }
-void AudioParameterInt::setValue (float newValue)                        { value = (float) convertFrom0to1 (newValue); valueChanged (get()); }
+void AudioParameterInt::setValue (float newValue)                        { value = (float) convertFrom0to1 (newValue); }
 float AudioParameterInt::getDefaultValue() const                         { return defaultValue; }
-int AudioParameterInt::getNumSteps() const                               { return rangeOfValues + 1; }
-float AudioParameterInt::getValueForText (const String& text) const      { return convertTo0to1 (intFromStringFunction (text)); }
-String AudioParameterInt::getText (float v, int length) const            { return stringFromIntFunction (convertFrom0to1 (v), length); }
-void AudioParameterInt::valueChanged (int)                               {}
+int AudioParameterInt::getNumSteps() const                               { return AudioProcessorParameterWithID::getNumSteps(); }
+float AudioParameterInt::getValueForText (const String& text) const      { return convertTo0to1 (text.getIntValue()); }
+String AudioParameterInt::getText (float v, int /*length*/) const        { return String (convertFrom0to1 (v)); }
 
 AudioParameterInt& AudioParameterInt::operator= (int newValue)
 {
@@ -134,66 +114,22 @@ AudioParameterInt& AudioParameterInt::operator= (int newValue)
 
 //==============================================================================
 AudioParameterBool::AudioParameterBool (const String& idToUse, const String& nameToUse,
-                                        bool def, const String& labelToUse,
-                                        std::function<String (bool, int)> stringFromBool,
-                                        std::function<bool (const String&)> boolFromString)
+                                        bool def, const String& labelToUse)
    : AudioProcessorParameterWithID (idToUse, nameToUse, labelToUse),
      value (def ? 1.0f : 0.0f),
-     defaultValue (value),
-     stringFromBoolFunction (stringFromBool),
-     boolFromStringFunction (boolFromString)
+     defaultValue (value)
 {
-    if (stringFromBoolFunction == nullptr)
-        stringFromBoolFunction = [] (bool v, int) { return v ? TRANS("On") : TRANS("Off"); };
-
-    if (boolFromStringFunction == nullptr)
-    {
-        StringArray onStrings;
-        onStrings.add (TRANS("on"));
-        onStrings.add (TRANS("yes"));
-        onStrings.add (TRANS("true"));
-
-        StringArray offStrings;
-        offStrings.add (TRANS("off"));
-        offStrings.add (TRANS("no"));
-        offStrings.add (TRANS("false"));
-
-        boolFromStringFunction = [onStrings, offStrings] (const String& text)
-        {
-            String lowercaseText (text.toLowerCase());
-
-            for (auto& testText : onStrings)
-                if (lowercaseText == testText)
-                    return true;
-
-            for (auto& testText : offStrings)
-                if (lowercaseText == testText)
-                    return false;
-
-            return text.getIntValue() != 0;
-        };
-    }
 }
 
 AudioParameterBool::~AudioParameterBool() {}
 
 float AudioParameterBool::getValue() const                               { return value; }
-void AudioParameterBool::setValue (float newValue)                       { value = newValue; valueChanged (get()); }
+void AudioParameterBool::setValue (float newValue)                       { value = newValue; }
 float AudioParameterBool::getDefaultValue() const                        { return defaultValue; }
 int AudioParameterBool::getNumSteps() const                              { return 2; }
 bool AudioParameterBool::isDiscrete() const                              { return true; }
-bool AudioParameterBool::isBoolean() const                               { return true; }
-void AudioParameterBool::valueChanged (bool)                             {}
-
-float AudioParameterBool::getValueForText (const String& text) const
-{
-    return boolFromStringFunction (text) ? 1.0f : 0.0f;
-}
-
-String AudioParameterBool::getText (float v, int maximumLength) const
-{
-    return stringFromBoolFunction (v >= 0.5f, maximumLength);
-}
+float AudioParameterBool::getValueForText (const String& text) const     { return text.getIntValue() != 0 ? 1.0f : 0.0f; }
+String AudioParameterBool::getText (float v, int /*length*/) const       { return String ((int) (v > 0.5f ? 1 : 0)); }
 
 AudioParameterBool& AudioParameterBool::operator= (bool newValue)
 {
@@ -206,39 +142,27 @@ AudioParameterBool& AudioParameterBool::operator= (bool newValue)
 
 //==============================================================================
 AudioParameterChoice::AudioParameterChoice (const String& idToUse, const String& nameToUse,
-                                            const StringArray& c, int def, const String& labelToUse,
-                                            std::function<String (int, int)> stringFromIndex,
-                                            std::function<int (const String&)> indexFromString)
+                                            const StringArray& c, int def, const String& labelToUse)
    : AudioProcessorParameterWithID (idToUse, nameToUse, labelToUse), choices (c),
      value ((float) def),
-     maxIndex (choices.size() - 1),
-     defaultValue (convertTo0to1 (def)),
-     stringFromIndexFunction (stringFromIndex),
-     indexFromStringFunction (indexFromString)
+     defaultValue (convertTo0to1 (def))
 {
     jassert (choices.size() > 0); // you must supply an actual set of items to choose from!
-
-    if (stringFromIndexFunction == nullptr)
-        stringFromIndexFunction = [this] (int index, int) { return choices [index]; };
-
-    if (indexFromStringFunction == nullptr)
-        indexFromStringFunction = [this] (const String& text) { return choices.indexOf (text); };
 }
 
 AudioParameterChoice::~AudioParameterChoice() {}
 
-int AudioParameterChoice::limitRange (int v) const noexcept              { return jlimit (0, maxIndex, v); }
-float AudioParameterChoice::convertTo0to1 (int v) const noexcept         { return jlimit (0.0f, 1.0f, v / (float) maxIndex); }
-int AudioParameterChoice::convertFrom0to1 (float v) const noexcept       { return limitRange (roundToInt (v * (float) maxIndex)); }
+int AudioParameterChoice::limitRange (int v) const noexcept              { return jlimit (0, choices.size() - 1, v); }
+float AudioParameterChoice::convertTo0to1 (int v) const noexcept         { return jlimit (0.0f, 1.0f, (v + 0.5f) / (float) choices.size()); }
+int AudioParameterChoice::convertFrom0to1 (float v) const noexcept       { return limitRange ((int) (v * (float) choices.size())); }
 
 float AudioParameterChoice::getValue() const                             { return convertTo0to1 (roundToInt (value)); }
-void AudioParameterChoice::setValue (float newValue)                     { value = (float) convertFrom0to1 (newValue); valueChanged (getIndex()); }
+void AudioParameterChoice::setValue (float newValue)                     { value = (float) convertFrom0to1 (newValue); }
 float AudioParameterChoice::getDefaultValue() const                      { return defaultValue; }
 int AudioParameterChoice::getNumSteps() const                            { return choices.size(); }
 bool AudioParameterChoice::isDiscrete() const                            { return true; }
-float AudioParameterChoice::getValueForText (const String& text) const   { return convertTo0to1 (indexFromStringFunction (text)); }
-String AudioParameterChoice::getText (float v, int length) const         { return stringFromIndexFunction (convertFrom0to1 (v), length); }
-void AudioParameterChoice::valueChanged (int)                            {}
+float AudioParameterChoice::getValueForText (const String& text) const   { return convertTo0to1 (choices.indexOf (text)); }
+String AudioParameterChoice::getText (float v, int /*length*/) const     { return choices [convertFrom0to1 (v)]; }
 
 AudioParameterChoice& AudioParameterChoice::operator= (int newValue)
 {

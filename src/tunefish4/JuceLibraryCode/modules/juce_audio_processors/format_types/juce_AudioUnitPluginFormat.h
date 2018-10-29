@@ -32,8 +32,6 @@ namespace juce
 //==============================================================================
 /**
     Implements a plugin format manager for AudioUnits.
-
-    @tags{Audio}
 */
 class JUCE_API  AudioUnitPluginFormat   : public AudioPluginFormat
 {

@@ -29,8 +29,6 @@ namespace juce
     audio sample format class.
 
     @see AudioData::Pointer.
-
-    @tags{Audio}
 */
 class JUCE_API  AudioData
 {
@@ -650,8 +648,6 @@ public:
 
     Note that these functions are deprecated - the AudioData class provides a much more
     flexible set of conversion classes now.
-
-    @tags{Audio}
 */
 class JUCE_API  AudioDataConverters
 {

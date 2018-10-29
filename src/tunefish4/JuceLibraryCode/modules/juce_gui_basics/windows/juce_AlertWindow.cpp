@@ -81,7 +81,7 @@ void AlertWindow::setMessage (const String& message)
 }
 
 //==============================================================================
-void AlertWindow::exitAlert (Button* button)
+void AlertWindow::buttonClicked (Button* button)
 {
     if (auto* parent = button->getParentComponent())
         parent->exitModalState (button->getCommandID());
@@ -101,7 +101,7 @@ void AlertWindow::addButton (const String& name,
     b->setCommandToTrigger (0, returnValue, false);
     b->addShortcut (shortcutKey1);
     b->addShortcut (shortcutKey2);
-    b->onClick = [this, b] { exitAlert (b); };
+    b->addListener (this);
 
     Array<TextButton*> buttonsArray (buttons.begin(), buttons.size());
     auto& lf = getLookAndFeel();

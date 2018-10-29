@@ -29,8 +29,6 @@ namespace juce
 
 //==============================================================================
 /**
-
-    @tags{GUI}
 */
 class JUCE_API  XmlTokeniser   : public CodeTokeniser
 {

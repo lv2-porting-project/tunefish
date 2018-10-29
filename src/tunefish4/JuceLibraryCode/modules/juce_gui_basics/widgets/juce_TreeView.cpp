@@ -124,7 +124,7 @@ public:
                             dragImage.multiplyAllAlphas (0.6f);
 
                             auto imageOffset = pos.getPosition() - e.getPosition();
-                            dragContainer->startDragging (dragDescription, &owner, dragImage, true, &imageOffset, &e.source);
+                            dragContainer->startDragging (dragDescription, &owner, dragImage, true, &imageOffset);
                         }
                         else
                         {
@@ -440,7 +440,7 @@ TreeView::TreeView (const String& name)
     : Component (name),
       viewport (new TreeViewport())
 {
-    addAndMakeVisible (viewport.get());
+    addAndMakeVisible (viewport);
     viewport->setViewedComponent (new ContentComponent (*this));
     setWantsKeyboardFocus (true);
 }
@@ -547,7 +547,7 @@ void TreeView::setOpenCloseButtonsVisible (const bool shouldBeVisible)
 
 Viewport* TreeView::getViewport() const noexcept
 {
-    return viewport.get();
+    return viewport;
 }
 
 //==============================================================================
@@ -1008,11 +1008,8 @@ void TreeView::showDragHighlight (const InsertPoint& insertPos) noexcept
 
     if (dragInsertPointHighlight == nullptr)
     {
-        dragInsertPointHighlight.reset (new InsertPointHighlight());
-        dragTargetGroupHighlight.reset (new TargetGroupHighlight());
-
-        addAndMakeVisible (dragInsertPointHighlight.get());
-        addAndMakeVisible (dragTargetGroupHighlight.get());
+        addAndMakeVisible (dragInsertPointHighlight = new InsertPointHighlight());
+        addAndMakeVisible (dragTargetGroupHighlight = new TargetGroupHighlight());
     }
 
     dragInsertPointHighlight->setTargetPosition (insertPos, viewport->getViewWidth());
@@ -1021,8 +1018,8 @@ void TreeView::showDragHighlight (const InsertPoint& insertPos) noexcept
 
 void TreeView::hideDragHighlight() noexcept
 {
-    dragInsertPointHighlight.reset();
-    dragTargetGroupHighlight.reset();
+    dragInsertPointHighlight = nullptr;
+    dragTargetGroupHighlight = nullptr;
 }
 
 void TreeView::handleDrag (const StringArray& files, const SourceDetails& dragSourceDetails)

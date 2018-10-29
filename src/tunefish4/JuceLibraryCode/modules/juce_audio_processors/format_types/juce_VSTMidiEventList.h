@@ -35,8 +35,6 @@ namespace juce
     events to the list.
 
     This is used by both the VST hosting code and the plugin wrapper.
-
-    @tags{Audio}
 */
 class VSTMidiEventList
 {

@@ -37,8 +37,6 @@ class MessageListener;
     deleted automatically after the message has been delivered.
 
     @see MessageListener, MessageManager, ActionListener, ChangeListener
-
-    @tags{Events}
 */
 class JUCE_API  Message  : public MessageManager::MessageBase
 {

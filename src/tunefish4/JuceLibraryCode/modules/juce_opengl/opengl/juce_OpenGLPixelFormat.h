@@ -32,8 +32,6 @@ namespace juce
     Represents the various properties of an OpenGL pixel format.
 
     @see OpenGLContext::setPixelFormat
-
-    @tags{OpenGL}
 */
 class JUCE_API  OpenGLPixelFormat
 {

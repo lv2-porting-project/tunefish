@@ -142,7 +142,7 @@ PluginListComponent::PluginListComponent (AudioPluginFormatManager& manager, Kno
       allowAsync (allowPluginsWhichRequireAsynchronousInstantiation),
       numThreads (allowAsync ? 1 : 0)
 {
-    tableModel.reset (new TableModel (*this, listToEdit));
+    tableModel = new TableModel (*this, listToEdit);
 
     TableHeaderComponent& header = table.getHeader();
 
@@ -154,12 +154,12 @@ PluginListComponent::PluginListComponent (AudioPluginFormatManager& manager, Kno
 
     table.setHeaderHeight (22);
     table.setRowHeight (20);
-    table.setModel (tableModel.get());
+    table.setModel (tableModel);
     table.setMultipleSelectionEnabled (true);
     addAndMakeVisible (table);
 
     addAndMakeVisible (optionsButton);
-    optionsButton.onClick = [this] { showOptionsMenu(); };
+    optionsButton.addListener (this);
     optionsButton.setTriggeredOnMouseDown (true);
 
     setSize (400, 600);
@@ -228,8 +228,8 @@ void PluginListComponent::removeSelectedPlugins()
 void PluginListComponent::setTableModel (TableListBoxModel* model)
 {
     table.setModel (nullptr);
-    tableModel.reset (model);
-    table.setModel (tableModel.get());
+    tableModel = model;
+    table.setModel (tableModel);
 
     table.getHeader().reSortTable();
     table.updateContent();
@@ -290,25 +290,28 @@ void PluginListComponent::optionsMenuCallback (int result)
     }
 }
 
-void PluginListComponent::showOptionsMenu()
+void PluginListComponent::buttonClicked (Button* button)
 {
-    PopupMenu menu;
-    menu.addItem (1, TRANS("Clear list"));
-    menu.addItem (2, TRANS("Remove selected plug-in from list"), table.getNumSelectedRows() > 0);
-    menu.addItem (3, TRANS("Show folder containing selected plug-in"), canShowSelectedFolder());
-    menu.addItem (4, TRANS("Remove any plug-ins whose files no longer exist"));
-    menu.addSeparator();
-
-    for (int i = 0; i < formatManager.getNumFormats(); ++i)
+    if (button == &optionsButton)
     {
-        auto* format = formatManager.getFormat (i);
+        PopupMenu menu;
+        menu.addItem (1, TRANS("Clear list"));
+        menu.addItem (2, TRANS("Remove selected plug-in from list"), table.getNumSelectedRows() > 0);
+        menu.addItem (3, TRANS("Show folder containing selected plug-in"), canShowSelectedFolder());
+        menu.addItem (4, TRANS("Remove any plug-ins whose files no longer exist"));
+        menu.addSeparator();
 
-        if (format->canScanForPlugins())
-            menu.addItem (10 + i, "Scan for new or updated " + format->getName() + " plug-ins");
+        for (int i = 0; i < formatManager.getNumFormats(); ++i)
+        {
+            AudioPluginFormat* const format = formatManager.getFormat (i);
+
+            if (format->canScanForPlugins())
+                menu.addItem (10 + i, "Scan for new or updated " + format->getName() + " plug-ins");
+        }
+
+        menu.showMenuAsync (PopupMenu::Options().withTargetComponent (&optionsButton),
+                            ModalCallbackFunction::forComponent (optionsMenuStaticCallback, this));
     }
-
-    menu.showMenuAsync (PopupMenu::Options().withTargetComponent (&optionsButton),
-                        ModalCallbackFunction::forComponent (optionsMenuStaticCallback, this));
 }
 
 bool PluginListComponent::isInterestedInFileDrag (const StringArray& /*files*/)
@@ -338,10 +341,10 @@ void PluginListComponent::setLastSearchPath (PropertiesFile& properties, AudioPl
 class PluginListComponent::Scanner    : private Timer
 {
 public:
-    Scanner (PluginListComponent& plc, AudioPluginFormat& format, const StringArray& filesOrIdentifiers,
-             PropertiesFile* properties, bool allowPluginsWhichRequireAsynchronousInstantiation, int threads,
+    Scanner (PluginListComponent& plc, AudioPluginFormat& format, PropertiesFile* properties,
+             bool allowPluginsWhichRequireAsynchronousInstantiation, int threads,
              const String& title, const String& text)
-        : owner (plc), formatToScan (format), filesOrIdentifiersToScan (filesOrIdentifiers), propertiesToUse (properties),
+        : owner (plc), formatToScan (format), propertiesToUse (properties),
           pathChooserWindow (TRANS("Select folders to scan..."), String(), AlertWindow::NoIcon),
           progressWindow (title, text, AlertWindow::NoIcon),
           progress (0.0), numThreads (threads), allowAsync (allowPluginsWhichRequireAsynchronousInstantiation),
@@ -352,9 +355,7 @@ public:
         // You need to use at least one thread when scanning plug-ins asynchronously
         jassert (! allowAsync || (numThreads > 0));
 
-        // If the filesOrIdentifiersToScan argumnent isn't empty, we should only scan these
-        // If the path is empty, then paths aren't used for this format.
-        if (filesOrIdentifiersToScan.isEmpty() && path.getNumPaths() > 0)
+        if (path.getNumPaths() > 0) // if the path is empty, then paths aren't used for this format.
         {
            #if ! JUCE_IOS
             if (propertiesToUse != nullptr)
@@ -384,14 +385,13 @@ public:
         if (pool != nullptr)
         {
             pool->removeAllJobs (true, 60000);
-            pool.reset();
+            pool = nullptr;
         }
     }
 
 private:
     PluginListComponent& owner;
     AudioPluginFormat& formatToScan;
-    StringArray filesOrIdentifiersToScan;
     PropertiesFile* propertiesToUse;
     ScopedPointer<PluginDirectoryScanner> scanner;
     AlertWindow pathChooserWindow, progressWindow;
@@ -482,14 +482,10 @@ private:
     {
         pathChooserWindow.setVisible (false);
 
-        scanner.reset (new PluginDirectoryScanner (owner.list, formatToScan, pathList.getPath(),
-                                                   true, owner.deadMansPedalFile, allowAsync));
+        scanner = new PluginDirectoryScanner (owner.list, formatToScan, pathList.getPath(),
+                                              true, owner.deadMansPedalFile, allowAsync);
 
-        if (! filesOrIdentifiersToScan.isEmpty())
-        {
-            scanner->setFilesOrIdentifiersToScan (filesOrIdentifiersToScan);
-        }
-        else if (propertiesToUse != nullptr)
+        if (propertiesToUse != nullptr)
         {
             setLastSearchPath (*propertiesToUse, formatToScan, pathList.getPath());
             propertiesToUse->saveIfNeeded();
@@ -501,7 +497,7 @@ private:
 
         if (numThreads > 0)
         {
-            pool.reset (new ThreadPool (numThreads));
+            pool = new ThreadPool (numThreads);
 
             for (int i = numThreads; --i >= 0;)
                 pool->addJob (new ScanJob (*this), true);
@@ -567,14 +563,9 @@ private:
 
 void PluginListComponent::scanFor (AudioPluginFormat& format)
 {
-    scanFor (format, StringArray());
-}
-
-void PluginListComponent::scanFor (AudioPluginFormat& format, const StringArray& filesOrIdentifiersToScan)
-{
-    currentScanner.reset (new Scanner (*this, format, filesOrIdentifiersToScan, propertiesToUse, allowAsync, numThreads,
-                                       dialogTitle.isNotEmpty() ? dialogTitle : TRANS("Scanning for plug-ins..."),
-                                       dialogText.isNotEmpty()  ? dialogText  : TRANS("Searching for all possible plug-in files...")));
+    currentScanner = new Scanner (*this, format, propertiesToUse, allowAsync, numThreads,
+                                  dialogTitle.isNotEmpty() ? dialogTitle : TRANS("Scanning for plug-ins..."),
+                                  dialogText.isNotEmpty()  ? dialogText  : TRANS("Searching for all possible plug-in files..."));
 }
 
 bool PluginListComponent::isScanning() const noexcept
@@ -586,10 +577,10 @@ void PluginListComponent::scanFinished (const StringArray& failedFiles)
 {
     StringArray shortNames;
 
-    for (auto& f : failedFiles)
-        shortNames.add (File::createFileWithoutCheckingPath (f).getFileName());
+    for (int i = 0; i < failedFiles.size(); ++i)
+        shortNames.add (File::createFileWithoutCheckingPath (failedFiles[i]).getFileName());
 
-    currentScanner.reset(); // mustn't delete this before using the failed files array
+    currentScanner = nullptr; // mustn't delete this before using the failed files array
 
     if (shortNames.size() > 0)
         AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,

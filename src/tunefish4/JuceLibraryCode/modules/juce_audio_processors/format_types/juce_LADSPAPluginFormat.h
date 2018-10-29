@@ -32,8 +32,6 @@ namespace juce
 //==============================================================================
 /**
     Implements a plugin format manager for LADSPA plugins.
-
-    @tags{Audio}
 */
 class JUCE_API  LADSPAPluginFormat   : public AudioPluginFormat
 {

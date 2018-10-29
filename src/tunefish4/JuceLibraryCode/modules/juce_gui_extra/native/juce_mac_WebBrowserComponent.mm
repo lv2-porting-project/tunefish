@@ -119,12 +119,13 @@ private:
     {
         if ([frame isEqual: [sender mainFrame]] && error != nullptr && [error code] != NSURLErrorCancelled)
         {
-            auto errorString = nsStringToJuce ([error localizedDescription]);
+            String errorString (nsStringToJuce ([error localizedDescription]));
+
             bool proceedToErrorPage = getOwner (self)->pageLoadHadNetworkError (errorString);
 
             // WebKit doesn't have an internal error page, so make a really simple one ourselves
             if (proceedToErrorPage)
-                getOwner (self)->goToURL ("data:text/plain;charset=UTF-8," + errorString);
+                getOwner(self)->goToURL (String ("data:text/plain;charset=UTF-8,") + errorString);
         }
     }
 
@@ -356,16 +357,19 @@ private:
 };
 
 //==============================================================================
-WebBrowserComponent::WebBrowserComponent (bool unloadWhenHidden)
-    : unloadPageWhenBrowserIsHidden (unloadWhenHidden)
+WebBrowserComponent::WebBrowserComponent (const bool unloadWhenHidden)
+    : browser (nullptr),
+      blankPageShown (false),
+      unloadPageWhenBrowserIsHidden (unloadWhenHidden)
 {
     setOpaque (true);
-    browser.reset (new Pimpl (this));
-    addAndMakeVisible (browser.get());
+
+    addAndMakeVisible (browser = new Pimpl (this));
 }
 
 WebBrowserComponent::~WebBrowserComponent()
 {
+    deleteAndZero (browser);
 }
 
 //==============================================================================

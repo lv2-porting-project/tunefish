@@ -113,7 +113,7 @@ public:
         [view release];
     }
 
-    bool initialiseOnRenderThread (OpenGLContext&)    { return true; }
+    void initialiseOnRenderThread (OpenGLContext&) {}
 
     void shutdownOnRenderThread()
     {

@@ -23,7 +23,7 @@
 namespace juce
 {
 
-class iOSAudioIODeviceType;
+struct iOSAudioIODeviceType;
 
 class iOSAudioIODevice : public AudioIODevice
 {
@@ -77,10 +77,10 @@ public:
 
 private:
     //==============================================================================
-    iOSAudioIODevice (iOSAudioIODeviceType&, const String&, const String&);
+    iOSAudioIODevice (const String&);
 
     //==============================================================================
-    friend class iOSAudioIODeviceType;
+    friend struct iOSAudioIODeviceType;
     friend struct AudioSessionHolder;
 
     struct Pimpl;

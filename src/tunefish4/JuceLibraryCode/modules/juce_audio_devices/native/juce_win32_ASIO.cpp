@@ -508,10 +508,11 @@ public:
         if (err == ASE_OK)
         {
             buffersCreated = true;
+
             tempBuffer.calloc (totalBuffers * currentBlockSizeSamples + 32);
 
             int n = 0;
-            Array<int> types;
+            Array <int> types;
             currentBitDepth = 16;
 
             for (int i = 0; i < (int) totalNumInputChans; ++i)
@@ -1423,7 +1424,11 @@ private:
 
     void setCallbackFunctions() noexcept
     {
-        ASIOCallbackFunctions<0>::setCallbacksForDevice (callbacks, this);
+        /**/ if (currentASIODev[0] == this) ASIOCallbackFunctions<0>::setCallbacks (callbacks);
+        else if (currentASIODev[1] == this) ASIOCallbackFunctions<1>::setCallbacks (callbacks);
+        else if (currentASIODev[2] == this) ASIOCallbackFunctions<2>::setCallbacks (callbacks);
+        else if (currentASIODev[3] == this) ASIOCallbackFunctions<3>::setCallbacks (callbacks);
+        else jassertfalse;
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ASIOAudioIODevice)

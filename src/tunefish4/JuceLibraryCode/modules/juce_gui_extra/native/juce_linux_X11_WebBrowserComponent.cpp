@@ -419,8 +419,7 @@ private:
 };
 
 //==============================================================================
-class WebBrowserComponent::Pimpl  : private Thread,
-                                    private CommandReceiver::Responder
+class WebBrowserComponent::Pimpl : private Thread, private CommandReceiver::Responder
 {
 public:
     Pimpl (WebBrowserComponent& parent)
@@ -716,6 +715,11 @@ WebBrowserComponent::WebBrowserComponent (const bool unloadPageWhenBrowserIsHidd
 
 WebBrowserComponent::~WebBrowserComponent()
 {
+    if (browser != nullptr)
+    {
+        delete browser;
+        browser = nullptr;
+    }
 }
 
 //==============================================================================

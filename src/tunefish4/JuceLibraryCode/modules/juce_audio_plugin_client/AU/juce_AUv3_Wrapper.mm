@@ -68,6 +68,10 @@
 
 #define JUCE_VIEWCONTROLLER_OBJC_NAME(x) JUCE_JOIN_MACRO (x, FactoryAUv3)
 
+#if ! JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES
+ #error AUv3 wrapper requires variadic template support
+#endif
+
 #if JUCE_IOS
  #define JUCE_IOS_MAC_VIEW  UIView
 #else
@@ -84,15 +88,15 @@ using namespace juce;
 // TODO: use SFINAE to automatically generate this for all NSObjects
 template <> struct ContainerDeletePolicy<AUAudioUnitBusArray>                   { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<AUParameterTree>                       { static void destroy (NSObject* o) { [o release]; } };
-template <> struct ContainerDeletePolicy<NSMutableArray<AUParameterNode*>>      { static void destroy (NSObject* o) { [o release]; } };
+template <> struct ContainerDeletePolicy<NSMutableArray<AUParameterNode *> >    { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<AUParameter>                           { static void destroy (NSObject* o) { [o release]; } };
-template <> struct ContainerDeletePolicy<NSMutableArray<AUAudioUnitBus*>>       { static void destroy (NSObject* o) { [o release]; } };
+template <> struct ContainerDeletePolicy<NSMutableArray<AUAudioUnitBus*> >      { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<AUAudioUnitBus>                        { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<AVAudioFormat>                         { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<AVAudioPCMBuffer>                      { static void destroy (NSObject* o) { [o release]; } };
-template <> struct ContainerDeletePolicy<NSMutableArray<NSNumber*>>             { static void destroy (NSObject* o) { [o release]; } };
+template <> struct ContainerDeletePolicy<NSMutableArray<NSNumber*> >            { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<NSNumber>                              { static void destroy (NSObject* o) { [o release]; } };
-template <> struct ContainerDeletePolicy<NSMutableArray<AUAudioUnitPreset*>>    { static void destroy (NSObject* o) { [o release]; } };
+template <> struct ContainerDeletePolicy<NSMutableArray<AUAudioUnitPreset*> >   { static void destroy (NSObject* o) { [o release]; } };
 template <> struct ContainerDeletePolicy<AUAudioUnitPreset>                     { static void destroy (NSObject* o) { [o release]; } };
 
 //==============================================================================
@@ -118,9 +122,9 @@ struct AudioProcessorHolder  : public ReferenceCountedObject
 private:
     ScopedPointer<AudioProcessor> processor;
 
-    AudioProcessorHolder& operator= (AudioProcessor*) = delete;
-    AudioProcessorHolder (AudioProcessorHolder&) = delete;
-    AudioProcessorHolder& operator= (AudioProcessorHolder&) = delete;
+    AudioProcessorHolder& operator= (AudioProcessor*) JUCE_DELETED_FUNCTION;
+    AudioProcessorHolder (AudioProcessorHolder&) JUCE_DELETED_FUNCTION;
+    AudioProcessorHolder& operator= (AudioProcessorHolder&) JUCE_DELETED_FUNCTION;
 };
 
 //==============================================================================
@@ -321,37 +325,7 @@ private:
             return self;
         }
 
-        static void dealloc (id self, SEL)
-        {
-            if (! MessageManager::getInstance()->isThisTheMessageThread())
-            {
-                WaitableEvent deletionEvent;
-
-                struct AUDeleter  : public CallbackMessage
-                {
-                    AUDeleter (id selfToDelete, WaitableEvent& event)
-                        : parentSelf (selfToDelete), parentDeletionEvent (event)
-                    {
-                    }
-
-                    void messageCallback() override
-                    {
-                        delete _this (parentSelf);
-                        parentDeletionEvent.signal();
-                    }
-
-                    id parentSelf;
-                    WaitableEvent& parentDeletionEvent;
-                };
-
-                (new AUDeleter (self, deletionEvent))->post();
-                deletionEvent.wait (-1);
-            }
-            else
-            {
-                delete _this (self);
-            }
-        }
+        static void dealloc (id self, SEL)                                                          { delete _this (self); }
 
         //==============================================================================
         static void reset (id self, SEL)                                                            { _this (self)->reset(); }
@@ -455,8 +429,6 @@ public:
     //==============================================================================
     void init()
     {
-        inParameterChangedCallback = false;
-
         AudioProcessor& processor = getAudioProcessor();
         const AUAudioFrameCount maxFrames = [getAudioUnit() maximumFramesToRender];
 
@@ -720,19 +692,7 @@ public:
     //==============================================================================
     AUInternalRenderBlock getInternalRenderBlock() override   { return internalRenderBlock;  }
     bool getRenderingOffline() override                       { return getAudioProcessor().isNonRealtime(); }
-    void setRenderingOffline (bool offline) override
-    {
-        auto& processor = getAudioProcessor();
-        auto isCurrentlyNonRealtime = processor.isNonRealtime();
-
-        if (isCurrentlyNonRealtime != offline)
-        {
-            ScopedLock callbackLock (processor.getCallbackLock());
-
-            processor.setNonRealtime (offline);
-            processor.prepareToPlay (processor.getSampleRate(), processor.getBlockSize());
-        }
-    }
+    void setRenderingOffline (bool offline) override          { getAudioProcessor().setNonRealtime (offline); }
 
     //==============================================================================
     NSString* getContextName() const    override              { return juceStringToNS (contextName); }
@@ -903,12 +863,6 @@ public:
 
     void audioProcessorParameterChanged (AudioProcessor*, int idx, float newValue) override
     {
-        if (inParameterChangedCallback.get())
-        {
-            inParameterChangedCallback = false;
-            return;
-        }
-
         if (isPositiveAndBelow (idx, getAudioProcessor().getNumParameters()))
         {
             if (AUParameter* param = [paramTree parameterWithAddress: getAUParameterAddressForIndex (idx)])
@@ -1090,13 +1044,13 @@ private:
         AudioBufferList* bufferList = nullptr;
         int maxFrames, numberOfChannels;
         bool isInterleaved;
-        AudioBuffer<float> scratchBuffer;
+        AudioSampleBuffer scratchBuffer;
     };
 
     //==============================================================================
     void addAudioUnitBusses (bool isInput)
     {
-        ScopedPointer<NSMutableArray<AUAudioUnitBus*>> array = [[NSMutableArray<AUAudioUnitBus*> alloc] init];
+        ScopedPointer<NSMutableArray<AUAudioUnitBus*> > array = [[NSMutableArray<AUAudioUnitBus*> alloc] init];
         AudioProcessor& processor = getAudioProcessor();
         const int n = AudioUnitHelpers::getBusCount (&processor, isInput);
 
@@ -1120,21 +1074,12 @@ private:
                                                                                          busses: array];
     }
 
-    // When parameters are discrete we need to use integer values.
-    float getMaximumParameterValue (int parameterIndex)
-    {
-       #if JUCE_FORCE_LEGACY_PARAMETER_AUTOMATION_TYPE
-        ignoreUnused (parameterIndex);
-        return 1.0f;
-       #else
-        auto& processor = getAudioProcessor();
-        return processor.isParameterDiscrete (parameterIndex) ? (float) (processor.getParameterNumSteps (parameterIndex) - 1) : 1.0f;
-       #endif
-    }
-
     void addParameters()
     {
-        ScopedPointer<NSMutableArray<AUParameterNode*>> params = [[NSMutableArray<AUParameterNode*> alloc] init];
+        ScopedPointer<NSMutableArray<AUParameterNode*> > params = [[NSMutableArray<AUParameterNode*> alloc] init];
+
+        paramObserver = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedFromHost);
+        paramProvider = CreateObjCBlock (this, &JuceAudioUnitv3::getValue);
 
         overviewParams = [[NSMutableArray<NSNumber*> alloc] init];
 
@@ -1165,16 +1110,8 @@ private:
             if (name.isEmpty() || ! processor.isParameterAutomatable (idx))
                 flags |= kAudioUnitParameterFlag_NonRealTime;
 
-            const bool isParameterDiscrete = processor.isParameterDiscrete (idx);
-
-            if (! isParameterDiscrete)
-                flags |= kAudioUnitParameterFlag_CanRamp;
-
             if (processor.isMetaParameter (idx))
                 flags |= kAudioUnitParameterFlag_IsGlobalMeta;
-
-            auto deleter = [](NSMutableArray* arr) { [arr release]; };
-            std::unique_ptr<NSMutableArray, decltype (deleter)> valueStrings (nullptr, deleter);
 
             // is this a meter?
             if (((processor.getParameterCategory (idx) & 0xffff0000) >> 16) == 2)
@@ -1183,36 +1120,13 @@ private:
                 flags |= kAudioUnitParameterFlag_MeterReadOnly | kAudioUnitParameterFlag_DisplayLogarithmic;
                 unit = kAudioUnitParameterUnit_LinearGain;
             }
-            else
-            {
-               #if ! JUCE_FORCE_LEGACY_PARAMETER_AUTOMATION_TYPE
-                if (auto* param = processor.getParameters()[idx])
-                {
-                    if (param->isDiscrete())
-                    {
-                        unit = param->isBoolean() ? kAudioUnitParameterUnit_Boolean : kAudioUnitParameterUnit_Indexed;
-                        auto maxValue = getMaximumParameterValue (idx);
-                        auto numSteps = param->getNumSteps();
-
-                        // Some hosts can't handle the huge numbers of discrete parameter values created when
-                        // using the default number of steps.
-                        jassert (numSteps != AudioProcessor::getDefaultNumParameterSteps());
-
-                        valueStrings.reset ([NSMutableArray new]);
-
-                        for (int i = 0; i < numSteps; ++i)
-                            [valueStrings.get() addObject: juceStringToNS (param->getText ((float) i / maxValue, 0))];
-                    }
-                }
-               #endif
-            }
 
            #if JUCE_FORCE_USE_LEGACY_PARAM_IDS
             AUParameterAddress address = static_cast<AUParameterAddress> (idx);
            #else
             AUParameterAddress address = generateAUParameterAddressForIndex (idx);
 
-            // Consider yourself very unlucky if you hit this assertion. The hash codes of your
+            // Consider yourself very unlucky if you hit this assertion. The hash code of your
             // parameter ids are not unique.
             jassert (! paramMap.contains (static_cast<int64> (address)));
 
@@ -1226,14 +1140,12 @@ private:
                                                                                           name: juceStringToNS (name)
                                                                                        address: address
                                                                                            min: 0.0f
-                                                                                           max: getMaximumParameterValue (idx)
+                                                                                           max: 1.0f
                                                                                           unit: unit
                                                                                       unitName: nullptr
                                                                                          flags: flags
-                                                                                  valueStrings: valueStrings.get()
+                                                                                  valueStrings: nullptr
                                                                            dependentParameters: nullptr] retain];
-
-            [param.get() setValue: processor.getParameterDefaultValue (idx)];
 
             [params addObject: param];
             [overviewParams addObject: [NSNumber numberWithUnsignedLongLong:address]];
@@ -1242,38 +1154,13 @@ private:
         // create methods in AUParameterTree return unretained objects (!) -> see Apple header AUAudioUnitImplementation.h
         paramTree = [[AUParameterTree createTreeWithChildren: params] retain];
 
-        paramObserver           = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedFromHost);
-        paramProvider           = CreateObjCBlock (this, &JuceAudioUnitv3::getValue);
-        stringFromValueProvider = CreateObjCBlock (this, &JuceAudioUnitv3::stringFromValue);
-        valueFromStringProvider = CreateObjCBlock (this, &JuceAudioUnitv3::valueFromString);
-
         [paramTree setImplementorValueObserver: paramObserver];
         [paramTree setImplementorValueProvider: paramProvider];
-        [paramTree setImplementorStringFromValueCallback: stringFromValueProvider];
-        [paramTree setImplementorValueFromStringCallback: valueFromStringProvider];
 
         if (processor.hasEditor())
         {
             editorParamObserver = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedForObserver);
             editorObserverToken = [paramTree tokenByAddingParameterObserver: editorParamObserver];
-        }
-    }
-
-    void setAudioProcessorParameter (int index, float value)
-    {
-        if (auto* param = getAudioProcessor().getParameters()[index])
-        {
-            if (value != param->getValue())
-            {
-                param->setValue (value);
-
-                inParameterChangedCallback = true;
-                param->sendValueChangedMessageToListeners (value);
-            }
-        }
-        else if (isPositiveAndBelow (index, getAudioProcessor().getNumParameters()))
-        {
-            getAudioProcessor().setParameter (index, value);
         }
     }
 
@@ -1312,8 +1199,6 @@ private:
     //==============================================================================
     void processEvents (const AURenderEvent *__nullable realtimeEventListHead, int numParams, AUEventSampleTime startTime)
     {
-        ignoreUnused (numParams);
-
         for (const AURenderEvent* event = realtimeEventListHead; event != nullptr; event = event->head.next)
         {
             switch (event->head.eventType)
@@ -1331,7 +1216,8 @@ private:
                     const AUParameterEvent& paramEvent = event->parameter;
                     const int idx = getJuceParameterIndexForAUAddress (paramEvent.parameterAddress);
 
-                    setAudioProcessorParameter (idx, paramEvent.value);
+                    if (isPositiveAndBelow (idx, numParams))
+                        getAudioProcessor().setParameter (idx, paramEvent.value);
                 }
                 break;
 
@@ -1459,7 +1345,7 @@ private:
         return noErr;
     }
 
-    void processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiBuffer) noexcept
+    void processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiBuffer) noexcept
     {
         auto& processor = getAudioProcessor();
         const ScopedLock sl (processor.getCallbackLock());
@@ -1477,10 +1363,11 @@ private:
     {
         if (param != nullptr)
         {
-            int idx = getJuceParameterIndexForAUAddress ([param address]);
-            auto normalisedValue = value / getMaximumParameterValue (idx);
+            const int idx = getJuceParameterIndexForAUAddress ([param address]);
+            auto& processor = getAudioProcessor();
 
-            setAudioProcessorParameter (idx, normalisedValue);
+            if (isPositiveAndBelow (idx, processor.getNumParameters()))
+                processor.setParameter (idx, value);
         }
     }
 
@@ -1492,50 +1379,15 @@ private:
             auto& processor = getAudioProcessor();
 
             if (isPositiveAndBelow (idx, processor.getNumParameters()))
-                return processor.getParameter (idx) * getMaximumParameterValue (idx);
+                return processor.getParameter (idx);
         }
 
         return 0;
     }
 
-    void valueChangedForObserver (AUParameterAddress, AUValue)
+    void valueChangedForObserver(AUParameterAddress, AUValue)
     {
         // this will have already been handled by valueChangedFromHost
-    }
-
-    NSString* stringFromValue (AUParameter* param, const AUValue* value)
-    {
-        String text;
-
-        if (param != nullptr && value != nullptr)
-        {
-            const int idx = getJuceParameterIndexForAUAddress ([param address]);
-            auto& processor = getAudioProcessor();
-
-            if (auto* p = processor.getParameters()[idx])
-                text = p->getText (*value / getMaximumParameterValue (idx), 0);
-            else
-                text = String (*value);
-        }
-
-        return juceStringToNS (text);
-    }
-
-    AUValue valueFromString (AUParameter* param, NSString* str)
-    {
-        if (param != nullptr && str != nullptr)
-        {
-            const int idx = getJuceParameterIndexForAUAddress ([param address]);
-            auto& processor = getAudioProcessor();
-            const String text (nsStringToJuce (str));
-
-            if (auto* p = processor.getParameters()[idx])
-                return p->getValueForText (text) * getMaximumParameterValue (idx);
-            else
-                return text.getFloatValue();
-        }
-
-        return 0;
     }
 
     //==============================================================================
@@ -1583,8 +1435,6 @@ private:
 
     ObjCBlock<AUImplementorValueObserver> paramObserver;
     ObjCBlock<AUImplementorValueProvider> paramProvider;
-    ObjCBlock<AUImplementorStringFromValueCallback> stringFromValueProvider;
-    ObjCBlock<AUImplementorValueFromStringCallback> valueFromStringProvider;
 
    #if ! JUCE_FORCE_USE_LEGACY_PARAM_IDS
     bool usingManagedParameter;
@@ -1601,7 +1451,7 @@ private:
     ScopedPointer<NSMutableArray<NSNumber*>> overviewParams;
     ScopedPointer<NSMutableArray<NSNumber*>> channelCapabilities;
 
-    ScopedPointer<NSMutableArray<AUAudioUnitPreset*>> factoryPresets;
+    ScopedPointer<NSMutableArray<AUAudioUnitPreset*> > factoryPresets;
 
     ObjCBlock<AUInternalRenderBlock> internalRenderBlock;
 
@@ -1618,8 +1468,6 @@ private:
     CurrentPositionInfo lastAudioHead;
 
     String contextName;
-
-    ThreadLocalValue<bool> inParameterChangedCallback;
 };
 
 const double JuceAudioUnitv3::kDefaultSampleRate = 44100.0;
@@ -1670,12 +1518,7 @@ public:
                     JUCE_IOS_MAC_VIEW* view = [[[JUCE_IOS_MAC_VIEW alloc] initWithFrame: convertToCGRect (editor->getBounds())] autorelease];
                     [myself setView: view];
 
-                   #if JUCE_IOS
-                    editor->setVisible (false);
-                   #else
                     editor->setVisible (true);
-                   #endif
-
                     editor->addToDesktop (0, view);
                 }
             }
@@ -1703,27 +1546,6 @@ public:
                 }
             }
         }
-    }
-
-    void didReceiveMemoryWarning()
-    {
-        if (processorHolder != nullptr)
-            if (auto* processor = processorHolder->get())
-                processor->memoryWarningReceived();
-    }
-
-    void viewDidAppear (bool)
-    {
-        if (processorHolder != nullptr)
-            if (AudioProcessorEditor* editor = getAudioProcessor().getActiveEditor())
-                editor->setVisible (true);
-    }
-
-    void viewDidDisappear (bool)
-    {
-        if (processorHolder != nullptr)
-            if (AudioProcessorEditor* editor = getAudioProcessor().getActiveEditor())
-                editor->setVisible (false);
     }
 
     CGSize getPreferredContentSize() const
@@ -1767,9 +1589,7 @@ public:
             creationEvent.wait (-1);
         }
         else
-        {
             retval = createAudioUnitOnMessageThread (descr, error);
-        }
 
         return [retval autorelease];
     }
@@ -1806,16 +1626,11 @@ private:
     ScopedPointer<JuceAUViewController> cpp;
 }
 
-- (instancetype) initWithNibName: (nullable NSString*) nib bundle: (nullable NSBundle*) bndl { self = [super initWithNibName: nib bundle: bndl]; cpp = new JuceAUViewController (self); return self; }
-- (void) loadView                { cpp->loadView(); }
-- (AUAudioUnit *) createAudioUnitWithComponentDescription: (AudioComponentDescription) desc error: (NSError **) error { return cpp->createAudioUnit (desc, error); }
-- (CGSize) preferredContentSize  { return cpp->getPreferredContentSize(); }
-- (void) viewDidLayoutSubviews   { cpp->viewDidLayoutSubviews(); }
-- (void) didReceiveMemoryWarning { cpp->didReceiveMemoryWarning(); }
-#if JUCE_IOS
-- (void) viewDidAppear: (BOOL) animated { cpp->viewDidAppear (animated); [super viewDidAppear:animated]; }
-- (void) viewDidDisappear: (BOOL) animated { cpp->viewDidDisappear (animated); [super viewDidDisappear:animated]; }
-#endif
+- (instancetype) initWithNibName: (nullable NSString*) nib bundle: (nullable NSBundle*) bndl { self = [super initWithNibName: nib bundle: bndl]; cpp = new JuceAUViewController (self); return self;}
+- (void) loadView               { cpp->loadView(); }
+- (AUAudioUnit *)createAudioUnitWithComponentDescription:(AudioComponentDescription)desc error:(NSError **)error { return cpp->createAudioUnit (desc, error); }
+- (CGSize) preferredContentSize { return cpp->getPreferredContentSize(); }
+- (void)viewDidLayoutSubviews   { return cpp->viewDidLayoutSubviews(); }
 @end
 
 //==============================================================================
@@ -1823,7 +1638,7 @@ private:
 bool JUCE_CALLTYPE juce_isInterAppAudioConnected() { return false; }
 void JUCE_CALLTYPE juce_switchToHostApplication()  {}
 #if JUCE_MODULE_AVAILABLE_juce_gui_basics
-Image JUCE_CALLTYPE juce_getIAAHostIcon (int)      { return {}; }
+Image JUCE_CALLTYPE juce_getIAAHostIcon (int)      { return Image(); }
 #endif
 #endif
 

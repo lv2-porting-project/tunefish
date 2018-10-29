@@ -36,8 +36,6 @@ namespace juce
     user clicks on a different tab.
 
     @see TabbedButtonBar
-
-    @tags{GUI}
 */
 class JUCE_API  TabbedComponent  : public Component
 {
@@ -213,11 +211,12 @@ protected:
 
 private:
     //==============================================================================
-    Array<WeakReference<Component>> contentComponents;
+    Array <WeakReference<Component> > contentComponents;
     WeakReference<Component> panelComponent;
-    int tabDepth = 30, outlineThickness = 1, edgeIndent = 0;
+    int tabDepth, outlineThickness, edgeIndent;
 
-    struct ButtonBar;
+    class ButtonBar;
+    friend class ButtonBar;
     void changeCallback (int newCurrentTabIndex, const String& newTabName);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TabbedComponent)

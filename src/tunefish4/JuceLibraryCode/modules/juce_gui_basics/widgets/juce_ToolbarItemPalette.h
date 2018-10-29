@@ -36,8 +36,6 @@ namespace juce
     which automatically shows one of these in a dialog box with lots of extra controls.
 
     @see Toolbar
-
-    @tags{GUI}
 */
 class JUCE_API  ToolbarItemPalette    : public Component,
                                         public DragAndDropContainer
@@ -66,7 +64,7 @@ private:
     ToolbarItemFactory& factory;
     Toolbar& toolbar;
     Viewport viewport;
-    OwnedArray<ToolbarItemComponent> items;
+    OwnedArray <ToolbarItemComponent> items;
 
     friend class Toolbar;
     void replaceComponent (ToolbarItemComponent&);
