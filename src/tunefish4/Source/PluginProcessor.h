@@ -100,7 +100,9 @@ public:
     bool                    isParamDirty(eU32 index);
     bool                    isParamDirtyAny() const;
     bool                    wasProgramSwitched() const;
+    bool                    isProgramNameDirty() const;
     void                    resetParamDirty(eBool dirty = eFALSE);
+    void                    resetProgramNameDirty(eBool dirty = eFALSE);
 
     bool                    writeFactoryPatchHeader(File headerFile) const;
 	bool					loadPresetFile(File file, bool applyToSynth = false, int index = -1);
@@ -118,7 +120,7 @@ private:
     eBool                   paramDirtyAny;
     eBool                   paramDirty[TF_PARAM_COUNT];
     eBool                   programSwitched;
-    eTfSynthProgram         currentProgram;
+    eBool                   programNameDirty;
     eTfSynthProgram         copiedProgram;
     eU32                    currentProgramIndex;
     String                  pluginLocation;

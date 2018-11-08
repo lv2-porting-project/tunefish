@@ -993,6 +993,25 @@ void Tunefish4AudioProcessorEditor::refreshUiFromSynth()
     }
 
     tfprocessor->resetParamDirty();
+
+    if (tfprocessor->isProgramNameDirty())
+    {
+        tfprocessor->resetProgramNameDirty();
+
+        const eU32 programCount = getProcessor()->getNumPrograms();
+        const eU32 currentProgram = getProcessor()->getCurrentProgram();
+
+        for (eU32 i=0; i<programCount; i++)
+        {
+            const String &name = tfprocessor->getProgramName(i);
+            m_cmbInstrument.changeItemText(i+1, name);
+            if (i == currentProgram)
+            {
+                m_cmbInstrument.setText(name);
+            }
+        }
+    }
+
     m_wasWindowHidden = false;
 }
 

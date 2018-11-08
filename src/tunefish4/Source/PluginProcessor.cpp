@@ -47,6 +47,7 @@ Tunefish4AudioProcessor::Tunefish4AudioProcessor() :
     tf(nullptr),
     synth(nullptr),
     paramDirtyAny(false),
+    programNameDirty(false),
     currentProgramIndex(0),
     adapterWriteOffset(0),
     adapterDataAvailable(0)
@@ -490,6 +491,11 @@ bool Tunefish4AudioProcessor::wasProgramSwitched() const
     return programSwitched;
 }
 
+bool Tunefish4AudioProcessor::isProgramNameDirty() const
+{
+    return programNameDirty;
+}
+
 void Tunefish4AudioProcessor::resetParamDirty(eBool dirty)
 {
     for (eU32 j = 0; j<TF_PARAM_COUNT; j++)
@@ -499,6 +505,11 @@ void Tunefish4AudioProcessor::resetParamDirty(eBool dirty)
 
     programSwitched = dirty;
     paramDirtyAny = dirty;
+}
+
+void Tunefish4AudioProcessor::resetProgramNameDirty(eBool dirty)
+{
+    programNameDirty = dirty;
 }
 
 bool Tunefish4AudioProcessor::writeFactoryPatchHeader(File headerFile) const
@@ -613,6 +624,9 @@ void Tunefish4AudioProcessor::getStateInformation (MemoryBlock& destData)
 {
     XmlElement xml ("TF4SETTINGS");
 
+    const eTfSynthProgram &currentProgram = programs[currentProgramIndex];
+    xml.setAttribute ("ProgName", currentProgram.getName());
+
     for (eU32 i=0; i<TF_PARAM_COUNT; i++)
     {
         xml.setAttribute (TF_NAMES[i], tf->params[i]);
@@ -630,6 +644,12 @@ void Tunefish4AudioProcessor::setStateInformation (const void* data, int sizeInB
         // make sure that it's actually our type of XML object..
         if (xmlState->hasTagName ("TF4SETTINGS"))
         {
+            String programName = xmlState->getStringAttribute("ProgName");
+
+            eTfSynthProgram &currentProgram = programs[currentProgramIndex];
+            currentProgram.setName(programName);
+            resetProgramNameDirty(true);
+
             for (eU32 i=0; i<TF_PARAM_COUNT; i++)
             {
                 tf->params[i] = static_cast<float>(xmlState->getDoubleAttribute (TF_NAMES[i], tf->params[i]));
