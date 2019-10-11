@@ -18,6 +18,7 @@
 
 // (You can add your own code in this section, and the Projucer will not overwrite it)
 
+#define JucePlugin_Build_LV2 1
 #define JucePlugin_LV2URI "https://github.com/paynebc/tunefish"
 
 // [END_USER_CODE_SECTION]

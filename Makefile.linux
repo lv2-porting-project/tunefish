@@ -1,0 +1,36 @@
+# -*- makefile -*-
+
+PREFIX = /usr/local
+LIBDIR = $(PREFIX)/lib
+VSTDIR = $(LIBDIR)/vst
+LV2DIR = $(LIBDIR)/lv2
+
+SRCDIR := src/tunefish4
+JUCEDIR := thirdparty/JUCE
+PROJUCER := $(JUCEDIR)/extras/Projucer/Builds/LinuxMakefile/build/Projucer
+
+all: release
+
+release:
+	$(MAKE) -C $(SRCDIR)/Builds/LinuxMakefile CONFIG=Release
+
+debug:
+	$(MAKE) -C $(SRCDIR)/Builds/LinuxMakefile CONFIG=Debug
+
+$(PROJUCER):
+	$(MAKE) -C $(SRCDIR)/extras/Projucer/Builds/LinuxMakefile
+
+resave: $(PROJUCER)
+	$(PROJUCER) --resave $(SRCDIR)/Tunefish4.jucer
+	echo "include ../../LV2.mak" >> $(SRCDIR)/Builds/LinuxMakefile/Makefile
+
+clean:
+	$(MAKE) -C $(SRCDIR)/Builds/LinuxMakefile clean
+
+install: all
+	install -d $(DESTDIR)$(VSTDIR)
+	cp -dpf $(SRCDIR)/Builds/LinuxMakefile/build/Tunefish4.so $(DESTDIR)$(VSTDIR)/
+	install -d $(DESTDIR)$(LV2DIR)
+	cp -dprf $(SRCDIR)/Builds/LinuxMakefile/build/Tunefish4.lv2/ $(DESTDIR)$(LV2DIR)/
+
+.PHONY: all release debug resave clean install
