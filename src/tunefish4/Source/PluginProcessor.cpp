@@ -329,6 +329,10 @@ void Tunefish4AudioProcessor::processEvents(MidiBuffer &midiMessages, eU32 messa
 
     // get the current tempo
     juce::AudioPlayHead::CurrentPositionInfo cpi;
+       if (cpi.bpm == 0)
+       {
+          getPlayHead()->getCurrentPosition(cpi);
+       }
     getPlayHead()->getCurrentPosition(cpi);
     eU32 tempo = static_cast<eU32>(cpi.bpm);
     eTfRecorder::getInstance().setTempo(static_cast<eU16>(tempo));
